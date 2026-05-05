@@ -68,6 +68,7 @@ def test_jl005_strict_shapes_error(fixtures_dir: Path) -> None:
     [
         ("jd001_missing_docstring.py", "JD001"),
         ("jd002_missing_parameters.py", "JD002"),
+        ("jd003_section_order.py", "JD003"),
         ("jd004_param_mismatch.py", "JD004"),
         ("jd005_no_returns_section.py", "JD005"),
         ("jm002_bad_latex.py", "JM002"),

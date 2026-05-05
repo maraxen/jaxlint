@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -45,6 +46,67 @@ def test_cli_score_on_clean(clean_fixture: Path) -> None:
 def test_cli_version() -> None:
     r = runner.invoke(app, ["version"])
     assert r.exit_code == 0
+
+
+@pytest.mark.smoke
+def test_cli_init_snippet() -> None:
+    r = runner.invoke(app, ["init"])
+    assert r.exit_code == 0
+    assert "[tool.jaxlint]" in r.output
+    assert "docstring-style" in r.output
+
+
+@pytest.mark.integration
+def test_cli_check_json_format(fixtures_dir: Path) -> None:
+    p = fixtures_dir / "jl001_scatter_gather.py"
+    r = runner.invoke(app, ["check", "--no-doc", "--format", "json", str(p)])
+    assert r.exit_code == 1
+    payload = json.loads(r.output)
+    assert isinstance(payload, list)
+    assert any(row.get("rule_id") == "JL001" for row in payload)
+
+
+@pytest.mark.integration
+def test_cli_doc_json_format(clean_fixture: Path) -> None:
+    r = runner.invoke(app, ["doc", "--format", "json", str(clean_fixture)])
+    assert r.exit_code == 0
+    payload = json.loads(r.output)
+    assert payload == []
+
+
+@pytest.mark.integration
+def test_cli_score_jsonl_and_baseline(tmp_path: Path) -> None:
+    current = tmp_path / "current.jsonl"
+    baseline_file = tmp_path / "baseline.jsonl"
+    entry = {
+        "name": "fn",
+        "signature": "",
+        "docstring": (
+            "Brief summary.\n\n"
+            "Parameters\n----------\n"
+            "x : int\n"
+            "    Input value.\n\n"
+            "Returns\n-------\n"
+            "int\n"
+            "    Incremented input.\n"
+        ),
+    }
+    blob = json.dumps(entry) + "\n"
+    current.write_text(blob, encoding="utf-8")
+    baseline_file.write_text(blob, encoding="utf-8")
+    r = runner.invoke(app, ["score", "--threshold", "0.1", "--jsonl", str(current), "--baseline", str(baseline_file)])
+    assert r.exit_code == 0
+    assert "Mean score:" in r.output
+    assert "Baseline mean:" in r.output
+
+
+@pytest.mark.integration
+def test_cli_score_syntax_error(tmp_path: Path) -> None:
+    bad = tmp_path / "broken.py"
+    bad.write_text("def oops(\n", encoding="utf-8")
+    r = runner.invoke(app, ["score", "--threshold", "0.99", str(bad)])
+    assert r.exit_code == 1
+    assert "syntax error" in r.output
 
 
 @pytest.mark.integration
