@@ -46,7 +46,7 @@ Markers include `smoke`, `unit`, `integration`, `slow`, and `needs_jax`. See [do
 
 ## Roadmap
 
-The living plan (phased **near / medium / long-term**, plus what is already shipped) is **[docs/roadmap.md](docs/roadmap.md)**. Highlights: **LSP** and **MCP** remain planned integrations; nearer work includes richer **CLI output**, **optional JAX CI**, **autodoc**, and harder **HLO** tests.
+The living plan (phased **near / medium / long-term**, plus what is already shipped) is **[docs/roadmap.md](docs/roadmap.md)**. Highlights: **LSP** and **MCP** remain planned integrations; shipped / near-term work includes **SARIF** and **compact** CLI output, **autodoc** API pages, deeper **HLO** tests — CI already runs a **required** **`needs_jax`** job (`jax-hlo`).
 
 ## Configuration
 

@@ -87,9 +87,27 @@ def test_cli_check_github_format(fixtures_dir: Path) -> None:
 
 @pytest.mark.integration
 def test_cli_check_unknown_format_exits_2(clean_fixture: Path) -> None:
-    r = runner.invoke(app, ["check", "--no-doc", "--format", "sarif", str(clean_fixture)])
+    r = runner.invoke(app, ["check", "--no-doc", "--format", "bogusfmt", str(clean_fixture)])
     assert r.exit_code == 2
     assert "Unknown --format" in r.output
+
+
+@pytest.mark.integration
+def test_cli_check_compact_format_on_clean(clean_fixture: Path) -> None:
+    r = runner.invoke(app, ["check", "--no-doc", "--format", "compact", str(clean_fixture)])
+    assert r.exit_code == 0
+    assert not r.output.strip()
+
+
+@pytest.mark.integration
+def test_cli_check_sarif_format(fixtures_dir: Path) -> None:
+    p = fixtures_dir / "jl001_scatter_gather.py"
+    r = runner.invoke(app, ["check", "--no-doc", "--format", "sarif", str(p)])
+    assert r.exit_code == 1
+    payload = json.loads(r.output)
+    assert payload.get("version") == "2.1.0"
+    results = payload["runs"][0]["results"]
+    assert any(r.get("ruleId") == "JL001" for r in results)
 
 
 @pytest.mark.integration

@@ -9,9 +9,11 @@ from jaxlint.core import (
     Diagnostic,
     Severity,
     describe_rules,
+    format_compact,
     format_diagnostics,
     format_github_annotations_json,
     format_json,
+    format_sarif,
     format_text,
     resolve_paths,
     run_checks,
@@ -53,11 +55,13 @@ print(format_text(diags))
 print(format_json(diags))
 print(format_github_annotations_json(diags))
 print(format_diagnostics(diags, "github"))  # same as format_github_annotations_json
+print(format_diagnostics(diags, "sarif"))
+print(format_diagnostics(diags, "compact"))
 ```
 
 Diagnostics sort by `(path, line, column, rule_id)` for deterministic output.
 
-`format_diagnostics(diags, fmt)` accepts `text`, `json`, or `github` (alias: `github-annotations`) and raises `ValueError` on unknown `fmt`.
+`format_diagnostics(diags, fmt)` accepts `text`, `compact`, `json`, `github` (alias: `github-annotations`), `sarif` (alias: `sarif-2.1.0`) and raises `ValueError` on unknown `fmt`.
 
 ## Rule catalogue
 

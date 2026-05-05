@@ -77,3 +77,16 @@ def test_graph_audit_while_loop_triggers_violation() -> None:
     r = GraphAuditSensor.audit_kernel(f, x)
     assert r["success"] is False
     assert r["violations"]
+
+
+@pytest.mark.unit
+@pytest.mark.needs_jax
+def test_graph_audit_instrument_and_run_checkify_path() -> None:
+    """Covers ``instrument_and_run`` (checkify wrapper); distinct from ``audit_kernel`` export plumbing."""
+
+    def f(x):
+        return x + 1.0
+
+    err, val = GraphAuditSensor.instrument_and_run(f, jnp.array(1.0, dtype=jnp.float32))
+    assert float(val) == pytest.approx(2.0)
+    err.throw()

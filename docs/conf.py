@@ -24,15 +24,23 @@ _year = datetime.now(UTC).year
 
 extensions = [
     "myst_parser",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx_copybutton",
 ]
 
-templates_path = []
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "show-inheritance": True,
+}
+autodoc_member_order = "bysource"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 source_suffix = {
     ".md": "myst",
+    ".rst": "restructuredtext",
 }
 
 myst_enable_extensions = ["colon_fence", "deflist", "tasklist"]

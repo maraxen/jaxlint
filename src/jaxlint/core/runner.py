@@ -11,6 +11,10 @@ from jaxlint.core.doc.mathjax import mathjax_diagnostics
 from jaxlint.core.doc.sections import doc_diagnostics_for_file
 from jaxlint.core.sensors import perf_diagnostics_for_file
 
+SARIF_SCHEMA_URI = (
+    "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
+)
+
 
 def resolve_paths(paths: list[Path]) -> list[Path]:
     py_files: list[Path] = []
@@ -85,15 +89,89 @@ def format_github_annotations_json(diagnostics: list[Diagnostic]) -> str:
     return json.dumps({"annotations": annotations}, indent=2)
 
 
+def format_compact(diagnostics: list[Diagnostic]) -> str:
+    """One line per diagnostic: ``path:line:col: severity: message (rule_id)``."""
+    lines = []
+    for d in sorted(diagnostics, key=lambda x: x.sort_key()):
+        loc = f"{d.path}:{d.line}:{d.col}"
+        lines.append(f"{loc}: {d.severity.value}: {d.message} ({d.rule_id})")
+    return "\n".join(lines)
+
+
+def format_sarif(diagnostics: list[Diagnostic], *, tool_version: str) -> str:
+    """Minimal SARIF 2.1.0 log (best-effort for generic viewers; not GHAS-specific)."""
+
+    def sarif_level(sev: Severity) -> str:
+        if sev == Severity.ERROR:
+            return "error"
+        if sev == Severity.WARNING:
+            return "warning"
+        return "note"
+
+    def one_based_col(c: int) -> int:
+        return 1 if c <= 0 else c
+
+    results: list[dict] = []
+    for d in sorted(diagnostics, key=lambda x: x.sort_key()):
+        uri = d.path.resolve().as_uri()
+        end_line = d.end_line if d.end_line is not None else d.line
+        region: dict[str, int] = {"startLine": d.line, "endLine": end_line}
+        # Match GitHub annotation rules: columns only when the span is a single line.
+        if end_line == d.line:
+            region["startColumn"] = one_based_col(d.col)
+            if d.end_col is not None:
+                region["endColumn"] = one_based_col(d.end_col)
+
+        results.append(
+            {
+                "ruleId": d.rule_id,
+                "level": sarif_level(d.severity),
+                "message": {"text": d.message},
+                "locations": [
+                    {
+                        "physicalLocation": {
+                            "artifactLocation": {"uri": uri},
+                            "region": region,
+                        }
+                    }
+                ],
+            }
+        )
+
+    payload = {
+        "$schema": SARIF_SCHEMA_URI,
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "jaxlint",
+                        "version": tool_version,
+                        "informationUri": "https://github.com/jax-ml/jaxlint",
+                    }
+                },
+                "results": results,
+            }
+        ],
+    }
+    return json.dumps(payload, indent=2)
+
+
 def format_diagnostics(diagnostics: list[Diagnostic], format_name: str) -> str:
     fmt = format_name.strip().lower()
     if fmt == "text":
         return format_text(diagnostics)
+    if fmt == "compact":
+        return format_compact(diagnostics)
     if fmt == "json":
         return format_json(diagnostics)
     if fmt in ("github", "github-annotations"):
         return format_github_annotations_json(diagnostics)
-    msg = f"Unknown --format {format_name!r} (expected text, json, or github)"
+    if fmt in ("sarif", "sarif-2.1.0"):
+        from jaxlint import __version__ as jaxlint_version
+
+        return format_sarif(diagnostics, tool_version=jaxlint_version)
+    msg = f"Unknown --format {format_name!r} (expected text, compact, json, github, or sarif)"
     raise ValueError(msg)
 
 

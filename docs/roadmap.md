@@ -12,10 +12,10 @@ Already in tree today:
 
 | Area | Status |
 |------|--------|
-| **CLI** (`check`, `doc`, `score`, `rules`, `init`, `version`, `hlo`) | Stable for core flows; `check`/`doc` support `--format text` or `--format json`. |
+| **CLI** (`check`, `doc`, `score`, `rules`, `init`, `version`, `hlo`) | Stable for core flows; `check`/`doc` support `--format text`, `compact`, `json`, `github` / `github-annotations`, or **SARIF** 2.1.0 (`sarif` / `sarif-2.1.0`). |
 | **Rules** | JL/JD/JM catalogue with fixtures and docs. |
 | **Config** | `[tool.jaxlint]` parsing, selects/ignores/per-file ignores. |
-| **Testing** | Pytest tiers (`smoke` / `unit` / `integration` / `needs_jax`), coverage floor, GitHub Actions. |
+| **Testing** | Pytest tiers (`smoke` / `unit` / `integration` / `needs_jax`), coverage floor, GitHub Actions. Pull requests run **smoke** + lint; **full pytest + coverage** runs on **`main` pushes only** (`lint-test`). |
 | **Docs** | Sphinx + MyST + Read the Docs (HTML plus **PDF** plus **htmlzip** on version builds). |
 | **`jaxlint[hlo]`** | Optional imports; CLI only checks the extra — **heavy HLO behaviour is lightly tested.** |
 
@@ -23,10 +23,10 @@ Already in tree today:
 
 Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 
-1. **Output formats** — SARIF or GitHub **annotation-friendly** JSON; optional `--format compact`; consider **Rich**-based human layout (Typer already pulls Rich transitively).
+1. **Output formats** — **Shipped:** GitHub annotation JSON, **SARIF** 2.1.0 (`--format sarif`), and **`compact`** text. **Remaining:** consider **Rich**-based human layout (Typer already pulls Rich transitively).
 2. **Hosted docs hygiene** — Remove RTD/GitHub **`linkcheck_ignore` placeholders** in `docs/conf.py` once real URLs exist; tighten `sphinx.fail_on_warning` on RTD when clean.
-3. **CI parity** — Optional **`needs_jax`** job on GitHub Actions (install `jaxlint[hlo]`, run marked tests).
-4. **API reference** — Sphinx **autodoc** / autosummary for `jaxlint.core` (and stubs for `jaxlint.hlo`).
+3. **CI parity** — **Shipped:** required **`jax-hlo`** job installs `jaxlint[hlo]` and runs `pytest -m needs_jax` (merge-blocking). PR **`lint-test`** jobs run smoke + Ruff; full suite + coverage on **`main`** only.
+4. **API reference** — **Shipped:** Sphinx **autodoc** / **autosummary** for `jaxlint.core` (and configuration types under `jaxlint.core.config`; see **`api`** in the docs toctree). **`jaxlint.hlo`** stays a narrative-only page (`hlo`) so JAX is not imported on RTD builders.
 5. **HLO credibility** — Targeted pytest (and/or golden IR snippets) for `SemanticAnalyzer` / `GraphAuditSensor`, not only import smoke.
 
 ## Medium term
