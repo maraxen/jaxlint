@@ -29,7 +29,7 @@ Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 2. **Hosted docs hygiene** — **`sphinx.fail_on_warning` is already on** in `.readthedocs.yml`. **Remaining:** shrink **`linkcheck_ignore`** in `docs/conf.py` once the canonical RTD/HTML URLs and GitHub targets respond reliably to automated linkcheck (the root Read the Docs URL and GitHub may 404 or rate-limit until the project and links are stable).
 3. **CI parity** — **Shipped:** required **`jax-hlo`** job installs `jaxlint[hlo]` and runs `pytest -m needs_jax` (merge-blocking). PR **`lint-test`** jobs run smoke + Ruff; full suite + coverage on **`main`** only.
 4. **API reference** — **Shipped:** Sphinx **autodoc** / **autosummary** for `jaxlint.core` (and configuration types under `jaxlint.core.config`; see **`api`** in the docs toctree). **`jaxlint.hlo`** stays a narrative-only page (`hlo`) so JAX is not imported on RTD builders.
-5. **HLO credibility** — **Shipped:** targeted pytest for `SemanticAnalyzer` / `GraphAuditSensor` (`get_operations`, `audit_kernel` / `audit_exported`, while and outfeed violation paths, `instrument_and_run` checkify failure). **In progress:** **golden StableHLO text** under `tests/fixtures/hlo/` for selected `audit_exported` paths (tests stay **`@pytest.mark.needs_jax`** and require **`jaxlint[hlo]`** in CI — golden files reduce drift from live `jax.export` *wording*, not the JAX dependency). **Remaining:** broaden golden coverage (and optional broader MLIR parsing) as needed.
+5. **HLO credibility** — **Shipped:** targeted pytest for `SemanticAnalyzer` / `GraphAuditSensor` (`get_operations`, `audit_kernel` / `audit_exported`, while and outfeed violation paths, `instrument_and_run` checkify failure). **Shipped (goldens):** StableHLO text fixtures under `tests/fixtures/hlo/` for two **`audit_exported`** checks — **outfeed** side-effect and **`stablehlo.while`** detection — with duck-typed export tests (**`@pytest.mark.needs_jax`**, **`jaxlint[hlo]`** in CI; merge-blocking **`jax-hlo`** pins JAX/jaxlib — see [Changelog](changelog.md)). **Remaining:** broaden golden coverage for more export-heavy cases (and optional broader MLIR parsing) as needed.
 
 ## Medium term
 
@@ -63,5 +63,6 @@ Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, 
 | **`--format rich`** for `check` / `doc` (`format_rich`, tests, CLI docs) | **Landed** |
 | Trim `linkcheck_ignore` after manual URL verification | **Partial** — `curl -sI` (May 2026): `https://jaxlint.readthedocs.io/` and `https://github.com/jax-ml/jaxlint` both return **404**; ignores kept in `docs/conf.py` with a short comment until those endpoints serve 200. |
 | Pin JAX in `jax-hlo` CI to stabilize golden text | **Done** — pins **`jax==0.10.0`** / **`jaxlib==0.10.0`** after `uv sync --all-groups --extra hlo`. |
+| Golden StableHLO: `stablehlo.while` for `audit_exported` (`while_loop_detected.mlir` + fake export test) | **Done** |
 
 **Previous sprint (May 2026):** Golden StableHLO fixtures + `needs_jax` wiring, changelog + docs index, roadmap / packaging version narrative (see shipped baseline and [Changelog](changelog.md)).
