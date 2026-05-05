@@ -40,6 +40,26 @@ jobs:
           name: coverage-xml-py${{ matrix.python-version }}
           path: coverage.xml
 
+  # Roadmap CI parity (needs_jax): install jaxlint[hlo] and run JAX-marked tests.
+  # Required — failures block merge. Developers can skip JAX locally; this job enforces it in CI.
+  jax-hlo:
+    name: JAX / HLO (needs_jax)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Sync with dev tooling and HLO extra
+        run: uv sync --all-groups --extra hlo
+
+      - name: pytest (needs_jax only)
+        run: uv run pytest -q -m needs_jax
+
   docs:
     runs-on: ubuntu-latest
     steps:
