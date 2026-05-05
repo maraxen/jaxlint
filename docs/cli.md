@@ -18,12 +18,12 @@ Run performance (AST) sensors and, unless disabled, docstring sections + MathJax
 | `PATHS...` | Files or directories (`*.py` discovered under directories). |
 | `--no-doc` | Skip docstring sections and MathJax. |
 | `--no-perf` | Skip AST performance sensors. |
-| `--format`, `-f` | `text` (default) or `json`. |
+| `--format`, `-f` | `text` (default), `json`, or `github` (GitHub Checks-style JSON; see below). |
 | `--config` | `pyproject.toml` search anchor (directory). |
 | `--select` | Comma-separated rule ID **prefixes**; overrides config `select`. |
 | `--ignore` | Comma-separated prefixes to ignore; overrides config `ignore`. |
 
-**Exit code:** `1` if any diagnostic has severity `error`; otherwise `0`.
+**Exit code:** `1` if any diagnostic has severity `error`; otherwise `0`. Invalid `--format` exits **`2`** (same as `jaxlint hlo` when the HLO extra is missing).
 
 ## `jaxlint doc`
 
@@ -32,11 +32,11 @@ Docstring sections + MathJax only (no AST performance sensors).
 | Option | Description |
 |--------|-------------|
 | `PATHS...` | As in `check`. |
-| `--format`, `-f` | `text` or `json`. |
+| `--format`, `-f` | `text`, `json`, or `github`. |
 | `--config` | As in `check`. |
 | `--select`, `--ignore` | As in `check`. |
 
-**Exit code:** `1` if any `error`; else `0`.
+**Exit code:** `1` if any `error`; else `0`. Invalid `--format` exits **`2`**.
 
 ## `jaxlint score`
 
@@ -73,3 +73,5 @@ If the optional HLO stack cannot be imported (missing extra or JAX), prints an e
 ## JSON output shape
 
 For `check` and `doc` with `--format json`, output is a JSON array of objects with keys: `rule_id`, `severity`, `message`, `path`, `line`, `col`, `end_line`, `end_col` (see `format_json` in `jaxlint.core.runner`).
+
+With `--format github`, output is a JSON object with an `annotations` array. Each element uses GitHub check run field names (`start_line`, `end_line`, `annotation_level`, `message`, `title`, `path`) suitable for tooling that posts [check run annotations](https://docs.github.com/en/rest/checks/runs). Severity maps to `annotation_level`: `error` → `failure`, `warning` → `warning`, `info` → `notice`. Single-line diagnostics may include `start_column` / `end_column` (**1-based**, per GitHub); **`start_line` ≠ `end_line`** omits columns, matching the API restriction on multiline annotations.

@@ -37,7 +37,7 @@ uv sync --extra docs
 uv run sphinx-build -W -b html docs docs/_build/html
 ```
 
-Link validation (respects [`linkcheck_ignore` in `docs/conf.py`](conf.py); trim that list once canonical URLs resolve):
+Link validation (see [`linkcheck_ignore` in `docs/conf.py`](conf.py); ignores cover the canonical Read the Docs and `jax-ml/jaxlint` GitHub URLs until linkcheck can verify them reliably):
 
 ```bash
 uv run sphinx-build -b linkcheck docs docs/_build/linkcheck
@@ -47,18 +47,21 @@ uv run sphinx-build -b linkcheck docs docs/_build/linkcheck
 
 - Builds are configured via [`.readthedocs.yml`](https://github.com/jax-ml/jaxlint/blob/main/.readthedocs.yml) at the repo root.
 - **`formats: [pdf, htmlzip]`** produces versioned downloadable artifacts on **branch/tag builds**. Per RTD policy, pull-request preview builds typically emit **HTML only** — treat PDF/htmlzip verification as a **`latest`** / release build step.
-- `sphinx.fail_on_warning` stays **`false`** in RTD YAML until warnings are extinguished (`true` tightens CI-style doc builds).
+- `sphinx.fail_on_warning` is **`true`** in the repo-root `.readthedocs.yml`, so RTD builds fail on Sphinx warnings once the hosted pipeline matches local `sphinx-build -W` hygiene.
 
 After the hosted project exists, update repository URLs in **`docs/conf.py`** and [`index.md`](index.md) if yours differ from the `jax-ml/jaxlint` placeholders.
 
 ## Documentation audit checklist (releases)
 
-Before enabling stricter Sphinx settings (`fail_on_warning: true`) or shrinking `linkcheck_ignore`:
+Maintainers should periodically verify (especially before a release):
 
 1. Hidden `{toctree}` in [`index.md`](index.md) lists every authored `.md` page.
 2. `sphinx-build -b linkcheck` is clean aside from deliberate ignores or known external outages.
 3. [`docs/cli.md`](cli.md) remains aligned with `jaxlint.cli.main` (spot-check flags).
 4. An RTD **non-PR** build shows **HTML**, **PDF**, and **htmlzip** successes for `latest` (or your release alias).
+5. Shrink **`linkcheck_ignore`** in `docs/conf.py` when canonical RTD/GitHub URLs become reliable for automated linkcheck.
+
+RTD already sets **`sphinx.fail_on_warning: true`**; local `sphinx-build -W -b html` should stay clean.
 
 ## Coverage
 
@@ -79,4 +82,4 @@ Open `htmlcov/index.html` locally after the run completes to browse annotated so
 
 ## Continuous integration
 
-GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/jax-ml/jaxlint/blob/main/.github/workflows/ci.yml)) runs Ruff plus smoke tests on every PR, a Sphinx HTML + linkcheck job, plus (on pushes to `main`) the full pytest suite with coverage uploads.
+GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/jax-ml/jaxlint/blob/main/.github/workflows/ci.yml)) runs Ruff plus smoke tests on every PR, a dedicated **JAX / HLO** job that installs `jaxlint[hlo]` and runs `pytest -m needs_jax`, a Sphinx HTML + linkcheck job, plus (on pushes to `main`) the full pytest suite with coverage uploads from the main `lint-test` matrix.

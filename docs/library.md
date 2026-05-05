@@ -9,6 +9,8 @@ from jaxlint.core import (
     Diagnostic,
     Severity,
     describe_rules,
+    format_diagnostics,
+    format_github_annotations_json,
     format_json,
     format_text,
     resolve_paths,
@@ -49,9 +51,13 @@ errors = [d for d in diags if d.severity == Severity.ERROR]
 ```python
 print(format_text(diags))
 print(format_json(diags))
+print(format_github_annotations_json(diags))
+print(format_diagnostics(diags, "github"))  # same as format_github_annotations_json
 ```
 
 Diagnostics sort by `(path, line, column, rule_id)` for deterministic output.
+
+`format_diagnostics(diags, fmt)` accepts `text`, `json`, or `github` (alias: `github-annotations`) and raises `ValueError` on unknown `fmt`.
 
 ## Rule catalogue
 

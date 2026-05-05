@@ -42,10 +42,11 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
 }
 
-# Placeholder/canonical URLs: remove entries once projects exist and links resolve.
+# Read the Docs + jax-ml org URLs: ignored for linkcheck until those endpoints are
+# reliably reachable (404/rate-limit otherwise). Prefer tightening this list over time.
 linkcheck_ignore = [
-    r"^https://jaxlint\.readthedocs\.io(?:/|$)",
-    r"^https://github\.com/jax-ml/jaxlint(?:/|$)",
+    r"^https://jaxlint\.readthedocs\.io",
+    r"^https://github\.com/jax-ml/jaxlint",
 ]
 linkcheck_timeout = 15
 linkcheck_retries = 2
