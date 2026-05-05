@@ -8,11 +8,7 @@ from pathlib import Path
 from jaxlint.core.diagnostic import Diagnostic, Severity
 
 
-def best_practices_diagnostics(code: str, path: Path) -> list[Diagnostic]:
-    try:
-        tree = ast.parse(code)
-    except SyntaxError:
-        return []
+def best_practices_diagnostics(tree: ast.Module, path: Path) -> list[Diagnostic]:
     for node in ast.walk(tree):
         for child in ast.iter_child_nodes(node):
             setattr(child, "parent", node)  # noqa: B010

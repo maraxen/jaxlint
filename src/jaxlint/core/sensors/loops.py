@@ -8,11 +8,7 @@ from pathlib import Path
 from jaxlint.core.diagnostic import Diagnostic, Severity
 
 
-def loop_diagnostics(code: str, path: Path) -> list[Diagnostic]:
-    try:
-        tree = ast.parse(code)
-    except SyntaxError:
-        return []
+def loop_diagnostics(tree: ast.Module, path: Path) -> list[Diagnostic]:
     visitor = LoopSensor(path)
     visitor.visit(tree)
     return visitor.diagnostics

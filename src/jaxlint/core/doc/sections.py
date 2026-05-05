@@ -48,19 +48,16 @@ def _docstring_start_line(node: ast.FunctionDef | ast.AsyncFunctionDef | ast.Cla
     return node.lineno
 
 
-def doc_diagnostics_for_file(
+def doc_diagnostics_from_source(
     path: Path,
     cfg: LintConfig,
+    text: str,
+    tree: ast.Module,
     *,
     sections: bool = True,
     mathjax: bool = True,
 ) -> list[Diagnostic]:
-    try:
-        text = path.read_text(encoding="utf-8")
-        tree = ast.parse(text)
-    except (OSError, SyntaxError):
-        return []
-
+    _ = text  # caller already read; diagnostics walk `tree` / extracted docstrings
     diagnostics: list[Diagnostic] = []
     validator = StyleValidator()
 
@@ -88,6 +85,22 @@ def doc_diagnostics_for_file(
             elif mathjax:
                 diagnostics.extend(mathjax_diagnostics(ds, path, line_base=_docstring_start_line(node)))
     return diagnostics
+
+
+def doc_diagnostics_for_file(
+    path: Path,
+    cfg: LintConfig,
+    *,
+    sections: bool = True,
+    mathjax: bool = True,
+) -> list[Diagnostic]:
+    try:
+        text = path.read_text(encoding="utf-8")
+        tree = ast.parse(text, filename=str(path))
+    except (OSError, SyntaxError):
+        return []
+
+    return doc_diagnostics_from_source(path, cfg, text, tree, sections=sections, mathjax=mathjax)
 
 
 def _function_doc_diagnostics(

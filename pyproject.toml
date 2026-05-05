@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jaxlint"
-version = "0.2.0"
+version = "0.2.1"
 description = "CLI and library for JAX-oriented static checks, docstring quality, and optional HLO analysis"
 readme = "README.md"
 requires-python = ">=3.11"

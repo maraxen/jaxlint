@@ -4,11 +4,18 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 
 ## Unreleased
 
+- **CLI:** Invalid **`--jobs` / `-j`** values (for example **`-j 0`**) on **`jaxlint check`** now exit with code **2** and a clear message instead of an uncaught traceback.
 - **Docs:** Refreshed **`linkcheck_ignore`** rationale in `docs/conf.py` with **`curl -sI -L`** status evidence (2026-05-05); next scheduled review **2026-10-01** while RTD/GitHub URLs remain **404**.
 - **Testing:** Golden StableHLO under [`tests/fixtures/hlo/`](https://github.com/jax-ml/jaxlint/tree/main/tests/fixtures/hlo): outfeed / **`stablehlo.while`** **`audit_exported`** paths, plus **`add_constant_kernel`** / **`multiply_reshape_kernel`** inventory goldens (duck-typed fake exports; **`needs_jax`**). Merge-blocking **jax-hlo** CI installs **`jaxlint[hlo]`** and JAX.
 - **CI:** The **`jax-hlo`** workflow pins **`jax==0.10.0`** and **`jaxlib==0.10.0`** after `uv sync` so **`needs_jax`** runs stay reproducible.
 - **CLI:** `jaxlint check` and `jaxlint doc` accept **`--format rich`** (Rich table: severity, rule, location, message). Depends on explicit **`rich`** (see `pyproject.toml`).
 - **Docs:** Added this changelog (per [roadmap steering](roadmap.md)).
+
+## 0.2.1
+
+- **Performance:** Single `read_text` + single `ast.parse` per file when both performance sensors and doc/MathJax checks run (`run_checks` combined path).
+- **Library / CLI:** `run_checks(..., jobs=...)` with default `min(32, os.process_cpu_count() or 1)`; **`jobs=1`** serial; **`jobs>1`** uses a thread pool over files. **`jaxlint check`** exposes **`-j` / `--jobs`**. Return value is **`list[Diagnostic]` sorted by `Diagnostic.sort_key()`** (stable ordering contract).
+- **Internals:** `ParsedPythonFile` / `load_parsed_python_file` in `jaxlint.core.parse_context`; perf sensors take `(tree, path)` (no internal parse).
 
 ## 0.2.0
 

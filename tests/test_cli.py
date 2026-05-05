@@ -17,9 +17,16 @@ def test_cli_rules_exit() -> None:
 
 
 @pytest.mark.smoke
-def test_cli_check_clean(clean_fixture: Path) -> None:
-    r = runner.invoke(app, ["check", "--no-doc", str(clean_fixture)])
+def test_cli_check_jobs_flag_serial(clean_fixture: Path) -> None:
+    r = runner.invoke(app, ["check", "--no-doc", "-j", "1", str(clean_fixture)])
     assert r.exit_code == 0
+
+
+@pytest.mark.smoke
+def test_cli_check_jobs_invalid_exits_2(clean_fixture: Path) -> None:
+    r = runner.invoke(app, ["check", "--no-doc", "-j", "0", str(clean_fixture)])
+    assert r.exit_code == 2
+    assert "jobs must be >= 1" in r.output
 
 
 @pytest.mark.integration

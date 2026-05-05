@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -13,5 +14,6 @@ from jaxlint.core.sensors.scatter_gather import scatter_gather_diagnostics
 def test_scatter_gather_on_fixture(fixtures_dir: Path) -> None:
     root = fixtures_dir / "jl001_scatter_gather.py"
     text = root.read_text(encoding="utf-8")
-    sg = scatter_gather_diagnostics(text, root)
+    tree = ast.parse(text, filename=str(root))
+    sg = scatter_gather_diagnostics(tree, root)
     assert any(d.rule_id == "JL001" for d in sg)

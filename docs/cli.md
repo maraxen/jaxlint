@@ -22,6 +22,7 @@ Run performance (AST) sensors and, unless disabled, docstring sections + MathJax
 | `--config` | `pyproject.toml` search anchor (directory). |
 | `--select` | Comma-separated rule ID **prefixes**; overrides config `select`. |
 | `--ignore` | Comma-separated prefixes to ignore; overrides config `ignore`. |
+| `--jobs`, `-j` | Number of parallel workers over **files** (thread pool). Default: `min(32, CPU count)` (see `os.process_cpu_count()`). Use **`-j 1`** for a fully serial run (no pool). |
 
 **Exit code:** `1` if any diagnostic has severity `error`; otherwise `0`. Invalid `--format` exits **`2`** (same as `jaxlint hlo` when the HLO extra is missing).
 

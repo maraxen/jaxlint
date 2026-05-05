@@ -8,13 +8,8 @@ from pathlib import Path
 from jaxlint.core.diagnostic import Diagnostic, Severity
 
 
-def scatter_gather_diagnostics(code: str, path: Path) -> list[Diagnostic]:
+def scatter_gather_diagnostics(tree: ast.Module, path: Path) -> list[Diagnostic]:
     warnings: list[Diagnostic] = []
-    try:
-        tree = ast.parse(code)
-    except SyntaxError:
-        return []
-
     sg = ScatterGatherVisitor(path)
     sg.visit(tree)
     warnings.extend(sg.diagnostics)

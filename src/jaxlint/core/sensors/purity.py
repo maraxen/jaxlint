@@ -8,11 +8,7 @@ from pathlib import Path
 from jaxlint.core.diagnostic import Diagnostic, Severity
 
 
-def purity_diagnostics(code: str, path: Path) -> list[Diagnostic]:
-    try:
-        tree = ast.parse(code)
-    except SyntaxError:
-        return []
+def purity_diagnostics(tree: ast.Module, path: Path) -> list[Diagnostic]:
     v = PuritySensor(path)
     v.visit(tree)
     return v.diagnostics

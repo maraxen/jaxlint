@@ -1,0 +1,57 @@
+# Refactor roadmap — August 2026 · Scale & performance (approved v2)
+
+**task_id:** `jaxlint-sprint-2026-08-scale`  
+**Source:** `docs/roadmap.md` (canonical product roadmap); this file is the **sprint execution artifact**.  
+**Plan-auditor (2026-05-05):** NEEDS_WORK → **resolved in v2** (API preservation, sorted `run_checks` return, thread-safety note, test seams, `cpu_count` None).
+
+## Theme
+
+Cut redundant I/O and AST work on default `jaxlint check`, add file-level parallelism (`-j` / `--jobs`), document **library** behavior change: `run_checks` returns diagnostics **sorted by `Diagnostic.sort_key`**.
+
+## API preservation
+
+- **`run_checks(..., jobs: int | None = None)`** — `None` means default policy: `min(32, os.process_cpu_count() or 1)`. **`jobs == 1`** forces serial (no pool). Empty file list: no pool overhead beyond current flow.
+- **`perf_diagnostics_for_file` / `doc_diagnostics_for_file`** remain **thin wrappers**: read + parse internally, same signatures, delegate to shared helpers. Callers treat **`LintConfig` as read-only** during concurrent runs.
+- **JAX-free:** All changes under `jaxlint.core` only; no new required deps.
+
+## SyntaxError semantics
+
+Single `ast.parse` at file boundary for perf; on `SyntaxError` or `OSError`, return **`[]`** for that file (same as today).
+
+## Thread-safety
+
+Workers do not mutate shared `cfg`; per-file `StyleValidator` / visitors stay **local** to the task (no cross-file shared mutable Griffe state).
+
+## Task IDs
+
+| ID | Title |
+|----|-------|
+| P01 | `ParsedPythonFile` (or `FileLintContext`) in `src/jaxlint/core/parse_context.py` — path, source, tree or parse failure. |
+| P02 | Perf sensors: accept `ast.Module`; **one** parse in `sensors/__init__.py`; keep `perf_diagnostics_for_file` as wrapper. |
+| P03 | Doc: internal `doc_diagnostics_from_source_tree(path, cfg, text, tree, ...)`; `doc_diagnostics_for_file` wraps read+parse. |
+| P04 | `run_checks`: single read+parse path when perf∧(doc∨mathjx); internal `_diagnostics_for_file`; **return sorted** by `sort_key`. |
+| P05 | `tests/test_parse_budget.py` — mock `Path.read_text` / `ast.parse` counters via public `run_checks` + wrappers. |
+| P06 | `ThreadPoolExecutor` when `jobs>1`; CLI `--jobs` / `-j` on `check` (and `doc` if same code path benefits — **check only** unless trivial). |
+| P07 | `tests/test_runner_parallel.py` — sorted list equality `jobs=1` vs `jobs in {2,4}` on mixed fixtures. |
+| P08 | `docs/cli.md`, `docs/changelog.md`, `docs/roadmap.md` (August sprint table), `docs/library.md` (sorted `run_checks` guarantee). |
+
+## Deferred
+
+**P09:** Opt-in disk cache (`--cache-dir`) — next sprint; mention bullet in roadmap.
+
+## Verification
+
+- `uv run ruff check src tests`
+- `uv run pytest -q -m smoke`
+- `uv run pytest -q`
+- `uv sync --all-groups --extra hlo` + pinned jax → `uv run pytest -q -m needs_jax`
+- `uv sync --extra docs && uv run sphinx-build -W -b html docs docs/_build/html`
+
+## Out of scope
+
+LSP, MCP, MLIR parser rewrite, disk cache (P09).
+
+## Outcome (2026-05-05)
+
+- **Reviewer:** APPROVE-with-nits → **remediated:** `check` wraps `run_checks` in `ValueError` handling (invalid `-j` exits **2**); `test_parallel_doc_only_matches_serial`; `test_cli_check_jobs_invalid_exits_2`.
+- **Verdict:** **APPROVE** for merge.

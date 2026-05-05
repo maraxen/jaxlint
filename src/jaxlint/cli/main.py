@@ -33,6 +33,12 @@ def check_cmd(
     config: Path | None = typer.Option(None, "--config", help="Starting path for pyproject.toml search"),
     select: str | None = typer.Option(None, "--select", help="Comma-separated rule prefixes (override config)"),
     ignore: str | None = typer.Option(None, "--ignore", help="Comma-separated rule prefixes to ignore"),
+    jobs: int | None = typer.Option(
+        None,
+        "--jobs",
+        "-j",
+        help="Parallel file workers (default: min(32, CPU count); use 1 for serial)",
+    ),
 ) -> None:
     if not paths:
         paths = [Path(".")]
@@ -42,15 +48,16 @@ def check_cmd(
         cfg = replace(cfg, select=frozenset(s.strip() for s in select.split(",") if s.strip()))
     if ignore:
         cfg = replace(cfg, ignore=frozenset(s.strip() for s in ignore.split(",") if s.strip()))
-    diags = run_checks(
-        paths,
-        cfg=cfg,
-        perf=not no_perf,
-        doc=not no_doc,
-        mathjx=not no_doc,
-        config_start=start,
-    )
     try:
+        diags = run_checks(
+            paths,
+            cfg=cfg,
+            perf=not no_perf,
+            doc=not no_doc,
+            mathjx=not no_doc,
+            config_start=start,
+            jobs=jobs,
+        )
         typer.echo(format_diagnostics(diags, format_))
     except ValueError as e:
         typer.echo(str(e), err=True)

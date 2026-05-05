@@ -8,11 +8,7 @@ from pathlib import Path
 from jaxlint.core.diagnostic import Diagnostic, Severity
 
 
-def shape_diagnostics(code: str, path: Path, *, strict: bool = False) -> list[Diagnostic]:
-    try:
-        tree = ast.parse(code)
-    except SyntaxError:
-        return []
+def shape_diagnostics(tree: ast.Module, path: Path, *, strict: bool = False) -> list[Diagnostic]:
     v = ShapeSensor(path, strict)
     v.visit(tree)
     return v.diagnostics

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
 from pathlib import Path
 
@@ -15,8 +16,9 @@ from rich.text import Text
 from jaxlint.core.config import LintConfig, load_config, rule_enabled
 from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.doc.mathjax import mathjax_diagnostics
-from jaxlint.core.doc.sections import doc_diagnostics_for_file
-from jaxlint.core.sensors import perf_diagnostics_for_file
+from jaxlint.core.doc.sections import doc_diagnostics_for_file, doc_diagnostics_from_source
+from jaxlint.core.parse_context import load_parsed_python_file
+from jaxlint.core.sensors import perf_diagnostics_for_file, perf_diagnostics_from_tree
 
 SARIF_SCHEMA_URI = (
     "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
@@ -226,6 +228,46 @@ def format_diagnostics(diagnostics: list[Diagnostic], format_name: str) -> str:
     raise ValueError(msg)
 
 
+def _default_jobs() -> int:
+    return min(32, os.process_cpu_count() or 1)
+
+
+def _diagnostics_for_file(
+    py: Path,
+    cfg: LintConfig,
+    *,
+    perf: bool,
+    doc: bool,
+    mathjx: bool,
+) -> list[Diagnostic]:
+    out: list[Diagnostic] = []
+    want_doc = doc or mathjx
+
+    if perf and want_doc:
+        ctx = load_parsed_python_file(py)
+        if ctx.tree is None:
+            return []
+        for d in perf_diagnostics_from_tree(py, cfg, ctx.tree):
+            if rule_enabled(d.rule_id, cfg, py):
+                out.append(d)
+        for d in doc_diagnostics_from_source(
+            py, cfg, ctx.source, ctx.tree, sections=doc, mathjax=mathjx
+        ):
+            if rule_enabled(d.rule_id, cfg, py):
+                out.append(d)
+        return out
+
+    if perf:
+        for d in perf_diagnostics_for_file(py, cfg):
+            if rule_enabled(d.rule_id, cfg, py):
+                out.append(d)
+    if want_doc:
+        for d in doc_diagnostics_for_file(py, cfg, sections=doc, mathjax=mathjx):
+            if rule_enabled(d.rule_id, cfg, py):
+                out.append(d)
+    return out
+
+
 def run_checks(
     paths: list[Path],
     *,
@@ -234,20 +276,31 @@ def run_checks(
     doc: bool = True,
     mathjx: bool = True,
     config_start: Path | None = None,
+    jobs: int | None = None,
 ) -> list[Diagnostic]:
-    cfg = cfg or load_config(config_start)
-    diagnostics: list[Diagnostic] = []
-    py_files = resolve_paths(paths)
+    if jobs is not None and jobs < 1:
+        msg = f"jobs must be >= 1, got {jobs}"
+        raise ValueError(msg)
 
-    for py in py_files:
-        if perf:
-            for d in perf_diagnostics_for_file(py, cfg):
-                if rule_enabled(d.rule_id, cfg, py):
-                    diagnostics.append(d)
-        if doc or mathjx:
-            for d in doc_diagnostics_for_file(py, cfg, sections=doc, mathjax=mathjx):
-                if rule_enabled(d.rule_id, cfg, py):
-                    diagnostics.append(d)
+    cfg = cfg or load_config(config_start)
+    py_files = resolve_paths(paths)
+    effective = _default_jobs() if jobs is None else jobs
+
+    def work(py: Path) -> list[Diagnostic]:
+        return _diagnostics_for_file(py, cfg, perf=perf, doc=doc, mathjx=mathjx)
+
+    batches: list[list[Diagnostic]] = []
+    if not py_files:
+        pass
+    elif effective == 1:
+        for py in py_files:
+            batches.append(work(py))
+    else:
+        with ThreadPoolExecutor(max_workers=effective) as ex:
+            batches = list(ex.map(work, py_files))
+
+    diagnostics: list[Diagnostic] = [d for batch in batches for d in batch]
+    diagnostics.sort(key=lambda d: d.sort_key())
     return diagnostics
 
 

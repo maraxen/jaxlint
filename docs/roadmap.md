@@ -8,13 +8,13 @@ This page is the **canonical** roadmap. The README carries a short pointer so it
 
 ## Shipped baseline (aligned with 0.2.x)
 
-This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.2.0**); treat that as the source of truth for semver, not an informal “v0.1” label.
+This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.2.1**); treat that as the source of truth for semver, not an informal “v0.1” label.
 
 Already in tree today:
 
 | Area | Status |
 |------|--------|
-| **CLI** (`check`, `doc`, `score`, `rules`, `init`, `version`, `hlo`) | Stable for core flows; `check`/`doc` support `--format text`, `compact`, `json`, `github` / `github-annotations`, **SARIF** 2.1.0 (`sarif` / `sarif-2.1.0`), or **`rich`** (table layout). |
+| **CLI** (`check`, `doc`, `score`, `rules`, `init`, `version`, `hlo`) | Stable for core flows; `check`/`doc` support `--format text`, `compact`, `json`, `github` / `github-annotations`, **SARIF** 2.1.0 (`sarif` / `sarif-2.1.0`), or **`rich`** (table layout). **`check`** supports **`-j` / `--jobs`** for parallel file linting (see [CLI](cli.md)). |
 | **Rules** | JL/JD/JM catalogue with fixtures and docs. |
 | **Config** | `[tool.jaxlint]` parsing, selects/ignores/per-file ignores. |
 | **Testing** | Pytest tiers (`smoke` / `unit` / `integration` / `needs_jax`), coverage floor, GitHub Actions. Pull requests run **smoke** + lint; **full pytest + coverage** runs on **`main` pushes only** (`lint-test`). |
@@ -37,7 +37,7 @@ Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 |------------|------|
 | **Language Server (LSP)** | Thin wrapper that streams **`Diagnostic`** objects to editors (diagnostics-only v1; formatting out of scope). |
 | **HLO diagnostics** | Optional analysers over lowered IR/text (similar in spirit to “HLO dump regex” tooling described in jaxbeans discussions): scatter→gather fusion gaps, noisy kernel launches — scoped to **`jaxlint.hlo`**. |
-| **Performance at scale** | Caching incremental results per file, parallelism for repo-wide runs. |
+| **Performance at scale** | **In progress (Aug 2026):** single parse per file on `check`, `run_checks(..., jobs=)` parallelism; **deferred:** opt-in disk cache (`--cache-dir`, next sprint). |
 | **Config evolution** | Per-rule overrides, SARIF/GitHub severity mapping, reproducible **`jaxlint.toml`** aside from `[tool.jaxlint]`. |
 
 ## Longer horizon / exploratory
@@ -53,6 +53,24 @@ These are **not committed** milestones; revisit when upstream JAX and IDE ecosys
 ## How to steer this roadmap
 
 Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, **config keys**, and **test fixtures**. Breaking changes should bump minor/major semver and mention migration in the Sphinx **[Changelog](changelog.md)**.
+
+## Current sprint notes (August 2026 — Scale & performance)
+
+**Theme:** **Scale & performance** — cut redundant I/O/AST work on `jaxlint check`, file-level parallelism, documented `run_checks` sort contract.
+
+**task_id:** `jaxlint-sprint-2026-08-scale` (execution artifact: `.agents/REFACTOR_ROADMAP`)
+
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| **P01** | `ParsedPythonFile` / `load_parsed_python_file` (`jaxlint.core.parse_context`) | **Shipped** |
+| **P02** | Perf sensors `(tree, path)`; one parse in `perf_diagnostics_for_file` | **Shipped** |
+| **P03** | `doc_diagnostics_from_source` + thin `doc_diagnostics_for_file` | **Shipped** |
+| **P04** | `run_checks` combined read/parse; sorted return; `jobs` + `ThreadPoolExecutor` | **Shipped** |
+| **P05** | `tests/test_parse_budget.py` | **Shipped** |
+| **P06** | CLI `-j` / `--jobs` on `check` | **Shipped** |
+| **P07** | `tests/test_runner_parallel.py` | **Shipped** |
+| **P08** | Docs: cli, changelog, roadmap, library | **Shipped** |
+| **P09** | Opt-in disk cache (`--cache-dir`) | **Deferred** (next sprint) |
 
 ## Current sprint notes (July 2026 — Trust surfaces)
 
