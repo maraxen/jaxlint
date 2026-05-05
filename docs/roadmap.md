@@ -63,11 +63,12 @@ Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, 
 | ID | Deliverable | Status |
 |----|-------------|--------|
 | **L01** | Optional **`[lsp]`** extra (Pygls), **`jaxlint-lsp`** / **`python -m jaxlint.lsp`** | **Shipped** |
-| **L02** | **`parse_python_source`** / **`diagnostics_for_python_source`**; LSP path never uses disk cache | **Shipped** |
-| **L03** | **`jaxlint.lsp`**: stdio server, **Full** sync, **`file://`** URIs | **Shipped** |
-| **L04** | Config via **`load_config(path.parent)`** (no CLI **`--select`** overrides in server) | **Shipped** |
-| **L05** | **`convert.py`**: **`Diagnostic`** → LSP diagnostic types | **Shipped** |
-| **L06** | Tests (**`lsp`** marker / focused files), docs (**`lsp.md`**), CI **`--extra lsp`** on PRs | **Shipped** |
+| **L02** | **`parse_python_source`** + **`diagnostics_for_python_source`** (sorted; same per-file semantics as **`_diagnostics_for_file`**); LSP never uses disk cache | **Shipped** |
+| **L03** | **`jaxlint.lsp.convert`**: **`Diagnostic`** → LSP types; unit tests | **Shipped** |
+| **L04** | **`jaxlint.lsp`**: stdio server, **Full** sync, **`file://`** only, **`didOpen`/`didChange`/`didClose`**, **`asyncio.to_thread`**; **`load_config(path.parent)`** (no CLI **`--select`** overrides) | **Shipped** |
+| **L05** | Subprocess JSON-RPC tests (**`publishDiagnostics`** on open/change); **`lsp`** + **`integration`** markers | **Shipped** |
+| **L06** | CI (**`uv sync --extra lsp`** + focused pytest on PRs), **`docs/lsp.md`**, changelog, library/README pointers | **Shipped** |
+| **Review** | Outcome audit (**2026-05-05**): **APPROVE-with-nits** — no blocking gaps vs DoD; optional follow-ups: **`didClose`** integration test, **`pytest -m lsp`** coverage of convert tests, **`contributing.md`** LSP blurb | **Recorded** |
 
 ## Current sprint notes (May 2026 — Disk cache / P09)
 
