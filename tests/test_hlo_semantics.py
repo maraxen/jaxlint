@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("jax")
@@ -12,6 +14,8 @@ from jax.experimental import checkify
 
 from jaxlint.hlo.graph_audit import GraphAuditSensor
 from jaxlint.hlo.stablehlo_analysis import SemanticAnalyzer
+
+_HLO_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "hlo"
 
 
 @pytest.mark.unit
@@ -64,12 +68,11 @@ def test_graph_audit_simple_kernel_succeeds() -> None:
 def test_graph_audit_exported_outfeed_violation_fake() -> None:
     """Duck-typed export: mlir mentions outfeed → one side-effect violation, success False."""
 
+    mlir_text = (_HLO_FIXTURES / "outfeed_side_effect.mlir").read_text(encoding="utf-8")
+
     class FakeExported:
         def mlir_module(self) -> str:
-            return (
-                '%1 = stablehlo.constant dense<0> : tensor<i32>\n'
-                '%2 = stablehlo.outfeed %1, %token : tensor<i32>\n'
-            )
+            return mlir_text
 
         in_avals = ()
         out_avals = ()

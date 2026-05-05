@@ -21,6 +21,8 @@ from jaxlint.hlo import GraphAuditSensor, SemanticAnalyzer, StableHLOGraph
 
 Actual behavior depends on JAX version, lowered IR, and how you invoke `audit_kernel`; treat this module as **runtime-sensitive**.
 
+Merge-blocking CI runs **`pytest -m needs_jax`** against this stack; some tests load **pinned StableHLO snippets** from `tests/fixtures/hlo/` (see [Contributing — HLO golden fixtures](contributing.md#hlo-golden-fixtures)).
+
 ## CLI hint
 
 `jaxlint hlo` does not analyze a kernel by itself; it verifies the extra is importable and prints a reminder to call `GraphAuditSensor` from Python. Missing installs exit with code **`2`** (see [CLI](cli.md)).

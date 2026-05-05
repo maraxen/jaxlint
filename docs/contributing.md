@@ -26,6 +26,12 @@ uv run ruff check src tests
 
 `jax`-dependent checks use `@pytest.mark.needs_jax` and importorskip—they are skipped unless JAX is installed (for example via `uv sync --extra hlo`).
 
+### HLO golden fixtures
+
+Some **`needs_jax`** tests load **pinned StableHLO / MLIR text** from `tests/fixtures/hlo/` instead of calling `jax.export` for every assertion. That lowers churn when export formatting changes, but **does not** remove the JAX + `jaxlint[hlo]` requirement: `SemanticAnalyzer` and the test module still import JAX-backed modules.
+
+When adding a golden file, keep it **minimal**, name it after the behaviour under test (for example `outfeed_side_effect.mlir`), and wire a `FakeExported`-style duck type or parser entry point in `tests/test_hlo_semantics.py` (or a dedicated test module) so CI’s `jax-hlo` job exercises it.
+
 ## Documentation (Sphinx + Read the Docs)
 
 Jaxlint tracks upstream JAX’s docs stack at a lighter weight: **Sphinx**, **MyST** (`myst-parser`), **`sphinx-book-theme`**, pinned in the **`docs`** optional extra of [`pyproject.toml`](../pyproject.toml).
@@ -55,7 +61,7 @@ After the hosted project exists, update repository URLs in **`docs/conf.py`** an
 
 Maintainers should periodically verify (especially before a release):
 
-1. Hidden `{toctree}` in [`index.md`](index.md) lists every authored `.md` page.
+1. Hidden `{toctree}` in [`index.md`](index.md) lists every authored `.md` page (including [`changelog.md`](changelog.md)).
 2. `sphinx-build -b linkcheck` is clean aside from deliberate ignores or known external outages.
 3. [`docs/cli.md`](cli.md) remains aligned with `jaxlint.cli.main` (spot-check flags).
 4. An RTD **non-PR** build shows **HTML**, **PDF**, and **htmlzip** successes for `latest` (or your release alias).
