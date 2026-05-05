@@ -57,7 +57,7 @@ class SemanticAnalyzer:
         operations: list[OperationInfo] = []
 
         stablehlo_ops = re.finditer(
-            r"%\d+\s+=\s+(stablehlo\.\w+)\s+([^:]+?)\s*:",
+            r"%\d+(?::\d+)?\s+=\s+(stablehlo\.\w+)\s*([^:]+?)\s*:",
             self.mlir_text,
         )
 
