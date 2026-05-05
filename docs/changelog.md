@@ -16,6 +16,12 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 - **CLI:** `jaxlint check` and `jaxlint doc` accept **`--format rich`** (Rich table: severity, rule, location, message). Depends on explicit **`rich`** (see `pyproject.toml`).
 - **Docs:** Added this changelog (per [roadmap steering](roadmap.md)).
 
+## 0.2.3
+
+- **MCP (agent-grade v1):** **`jaxlint_check`** accepts optional **`structured`** (JSON envelope **`jaxlint.mcp.v1`** with **`success`**, **`diagnostics`**, **`error`**, **`meta`** including **`elapsed_ms`** and **`paths_resolved`**), **`jobs`**, and **`cache_dir`** (path mode only; forwarded to **`run_checks`**). Default **`structured=false`** preserves legacy behaviour (diagnostic array JSON or **`error:`** strings). Source mode rejects **`jobs`** / **`cache_dir`** with **`unsupported_option`** when structured. Invalid **`jobs`** maps to **`invalid_argument`** (legacy **`error:`** + message).
+- **MCP:** New **`jaxlint_capabilities`** tool — JSON document with **`schema_version`**, **`package_version`**, and registered tool metadata (**`MCP_TOOLS_REGISTRY`** single source of truth).
+- **Tests / docs:** **`pytest -m mcp`** covers structured envelopes, option validation, and capabilities; README + roadmap sprint notes updated.
+
 ## 0.2.2
 
 - **LSP:** Module-level **`pytest.mark.lsp`** on **`tests/test_lsp_convert.py`** and **`tests/test_diagnostics_for_python_source.py`**; PR CI runs **`uv run pytest -q -m lsp`**. Subprocess coverage for **`textDocument/didClose`** publishing **empty** diagnostics; **`docs/lsp.md`** documents the clear behaviour. **Contributing** documents the **`pytest -m lsp`** workflow. Roadmap **Open TODOs (LSP v1 reviewer nits)** checked off where satisfied (see [Roadmap](roadmap.md)).

@@ -8,7 +8,7 @@ This page is the **canonical** roadmap. The README carries a short pointer so it
 
 ## Shipped baseline (aligned with 0.2.x)
 
-This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.2.2**); treat that as the source of truth for semver, not an informal “v0.1” label.
+This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.2.3**); treat that as the source of truth for semver, not an informal “v0.1” label.
 
 Already in tree today:
 
@@ -46,13 +46,27 @@ These are **not committed** milestones; revisit when upstream JAX and IDE ecosys
 
 | Idea | Notes |
 |------|--------|
-| **MCP server** | **Preview (0.2.2):** optional **`jaxlint[mcp]`** — FastMCP stdio server (`jaxlint-mcp`), tools **`jaxlint_check`**, **`jaxlint_rules`**, **`jaxlint_version`** (see [Changelog](changelog.md)). |
+| **MCP server** | **v1 (0.2.3):** optional **`jaxlint[mcp]`** — FastMCP stdio server (`jaxlint-mcp`), tools **`jaxlint_check`** (structured envelope, **`jobs`** / **`cache_dir`** on paths), **`jaxlint_capabilities`**, **`jaxlint_rules`**, **`jaxlint_version`** (see [Changelog](changelog.md)). |
 | **Math semantics** | Beyond delimiter/LaTeX structure: optional SymPy-backed checks — opt-in dependency. |
 | **Deeper parallelism / sharding UX** | New rules aligned with JAX `jit`/`shard_map` ergonomics as patterns stabilize. |
 
 ## How to steer this roadmap
 
 Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, **config keys**, and **test fixtures**. Breaking changes should bump minor/major semver and mention migration in the Sphinx **[Changelog](changelog.md)**.
+
+## Current sprint notes (May 2026 — Agent-grade MCP v1 / “nascency”)
+
+**Theme:** **Structured MCP responses**, **`run_checks`** passthrough options from agents, and a **`jaxlint_capabilities`** introspection tool — backward compatible by default.
+
+**task_id:** `jaxlint-sprint-2026-05-nascency`
+
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| **MC1** | **`jaxlint_check`**: optional **`structured`**, **`jobs`**, **`cache_dir`**; legacy default unchanged | **Shipped** |
+| **MC2** | **`jaxlint.mcp.v1`** envelope (`success`, `diagnostics`, `error`, `meta` with wall-clock **`elapsed_ms`**) | **Shipped** |
+| **MC3** | **`jaxlint_capabilities`** + **`MCP_TOOLS_REGISTRY`** (single source of truth) | **Shipped** |
+| **MC4** | **`pytest -m mcp`** — structured path/source, JD001, unsupported options, invalid **`jobs`**, capabilities JSON | **Shipped** |
+| **MC5** | Docs + version **0.2.3** (changelog, README, roadmap) | **Shipped** |
 
 ## Current sprint notes (May 2026 — LSP nits + MCP preview)
 
