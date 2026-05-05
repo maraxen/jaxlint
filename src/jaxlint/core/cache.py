@@ -14,7 +14,7 @@ from jaxlint import __version__
 from jaxlint.core.config import LintConfig
 from jaxlint.core.diagnostic import Diagnostic, Severity
 
-CACHE_FORMAT_VERSION = 1
+CACHE_FORMAT_VERSION = 2
 
 
 def _canonical_config_dict(cfg: LintConfig) -> dict[str, Any]:
@@ -31,6 +31,7 @@ def _canonical_config_dict(cfg: LintConfig) -> dict[str, Any]:
         "rubric_threshold": cfg.rubric_threshold,
         "section_order": list(cfg.section_order),
         "select": sorted(cfg.select),
+        "severity_overrides": {k: cfg.severity_overrides[k].value for k in sorted(cfg.severity_overrides.keys())},
         "strict_shapes": cfg.strict_shapes,
     }
 

@@ -19,6 +19,14 @@ from jaxlint.core.doc.rubric_impl import RubricScorer
 app = typer.Typer(help="JAX-oriented linting and doc quality", no_args_is_help=True)
 
 
+def _config_anchor(config: Path | None) -> Path:
+    """Directory used as ``run_checks(..., config_start=...)`` when config is supplied."""
+    if config is None:
+        return Path.cwd()
+    resolved = Path(config).resolve()
+    return resolved.parent if resolved.is_file() else resolved
+
+
 @app.command("check")
 def check_cmd(
     paths: list[Path] = typer.Argument(default=None, help="Files or directories (.py)"),
@@ -30,7 +38,11 @@ def check_cmd(
         "-f",
         help="text, compact, json, github (Checks JSON), sarif, rich",
     ),
-    config: Path | None = typer.Option(None, "--config", help="Starting path for pyproject.toml search"),
+    config: Path | None = typer.Option(
+        None,
+        "--config",
+        help="Directory to search from, or path to jaxlint.toml / pyproject.toml",
+    ),
     select: str | None = typer.Option(None, "--select", help="Comma-separated rule prefixes (override config)"),
     ignore: str | None = typer.Option(None, "--ignore", help="Comma-separated rule prefixes to ignore"),
     jobs: int | None = typer.Option(
@@ -47,8 +59,9 @@ def check_cmd(
 ) -> None:
     if not paths:
         paths = [Path(".")]
-    start = Path(config).resolve() if config else Path.cwd()
-    cfg = load_config(start)
+    cfg_source = Path(config).resolve() if config else None
+    cfg = load_config(cfg_source)
+    run_anchor = _config_anchor(config)
     if select:
         cfg = replace(cfg, select=frozenset(s.strip() for s in select.split(",") if s.strip()))
     if ignore:
@@ -61,7 +74,7 @@ def check_cmd(
             perf=not no_perf,
             doc=not no_doc,
             mathjx=not no_doc,
-            config_start=start,
+            config_start=run_anchor,
             jobs=jobs,
             cache_dir=effective_cache,
         )
@@ -87,13 +100,14 @@ def doc_cmd(
 ) -> None:
     if not paths:
         paths = [Path(".")]
-    start = Path(config).resolve() if config else Path.cwd()
-    cfg = load_config(start)
+    cfg_source = Path(config).resolve() if config else None
+    cfg = load_config(cfg_source)
+    run_anchor = _config_anchor(config)
     if select:
         cfg = replace(cfg, select=frozenset(s.strip() for s in select.split(",") if s.strip()))
     if ignore:
         cfg = replace(cfg, ignore=frozenset(s.strip() for s in ignore.split(",") if s.strip()))
-    diags = run_checks(paths, cfg=cfg, perf=False, doc=True, mathjx=True, config_start=start)
+    diags = run_checks(paths, cfg=cfg, perf=False, doc=True, mathjx=True, config_start=run_anchor)
     try:
         typer.echo(format_diagnostics(diags, format_))
     except ValueError as e:
@@ -110,8 +124,8 @@ def score_cmd(
     threshold: float | None = typer.Option(None, "--threshold"),
     config: Path | None = typer.Option(None, "--config"),
 ) -> None:
-    start = Path(config).resolve() if config else Path.cwd()
-    cfg = load_config(start)
+    cfg_source = Path(config).resolve() if config else None
+    cfg = load_config(cfg_source)
     th = threshold if threshold is not None else cfg.rubric_threshold
     scorer = RubricScorer()
 

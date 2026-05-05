@@ -1,10 +1,18 @@
 # Configuration (`[tool.jaxlint]`)
 
-jaxlint reads optional settings from the **first** `pyproject.toml` found when walking upward from:
+jaxlint discovers optional settings by walking **upward** from a starting directory (`[root] + root.parents`):
 
-- the `--config` directory (CLI), or
-- `config_start` passed to `load_config` / `run_checks`, or
-- the current working directory.
+- the `--config` directory (CLI), when `--config` points at a directory;
+- the current working directory, when `--config` is omitted;
+- or **only** the `--config` file, when `--config` points at `jaxlint.toml` or `pyproject.toml` (no upward walk).
+
+At each directory during the walk:
+
+1. If **`jaxlint.toml`** exists in that directory, parse **`[tool.jaxlint]`** from it and stop (**`pyproject.toml` in the same directory is not read**).
+2. Else if **`pyproject.toml`** exists there, parse **`[tool.jaxlint]`** from it and stop.
+3. Else continue to the parent directory.
+
+If both **`jaxlint.toml`** and **`pyproject.toml`** exist in the **same** directory, loading fails with **`ValueError`** (pick one file).
 
 Parsed keys live in `LintConfig` (`jaxlint.core.config`). TOML keys use **kebab-case**; Python attributes use **snake_case**.
 
@@ -19,7 +27,8 @@ Parsed keys live in `LintConfig` (`jaxlint.core.config`). TOML keys use **kebab-
 | `section-order` | list of strings | `Parameters`, `Returns`, `Raises`, `Examples`, `Pseudocode`, `Hardware Notes` | Canonical order for JD003 warnings. |
 | `strict-shapes` | bool | `false` | If `true`, JL005 is promoted to **error** severity. |
 | `rubric-threshold` | float | `0.75` | Default threshold for `jaxlint score`. |
-| `cache-dir` | string (path) | *(unset)* | Optional directory for caching **`jaxlint check`** diagnostics. Relative paths are resolved against the directory containing the discovered `pyproject.toml`. **`jaxlint check --cache-dir`** overrides this when the CLI flag is present. |
+| `cache-dir` | string (path) | *(unset)* | Optional directory for caching **`jaxlint check`** diagnostics. Relative paths are resolved against the directory containing the loaded config file (`jaxlint.toml` or `pyproject.toml`). **`jaxlint check --cache-dir`** overrides this when the CLI flag is present. |
+| `severity-overrides` | table | `{}` | Map rule-id **patterns** → `error`, `warning`, or `info`. Applied **after** sensors (including **`strict-shapes`** for JL005) and **after** `select` / `ignore` / `per-file-ignores`. Pattern matching uses the same rules as `select` / `ignore` (`pattern_matches`). Keys must match at least one known rule id (unknown keys are rejected at parse time). Invalid severity strings are rejected at parse time. |
 | `per-file-ignores` | table | `{}` | Map of **glob patterns** → rule patterns to disable for matching paths. |
 
 ### `select`, `ignore`, and `per-file-ignores` patterns
@@ -45,6 +54,16 @@ select = ["JD", "JM"]
 ```toml
 [tool.jaxlint]
 strict-shapes = true
+```
+
+**Downgrade JL005 to a warning even when `strict-shapes` is true** (override wins):
+
+```toml
+[tool.jaxlint]
+strict-shapes = true
+
+[tool.jaxlint.severity-overrides]
+JL005 = "warning"
 ```
 
 **Ignore JL005 everywhere except tune per directory:**

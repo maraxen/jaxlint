@@ -44,6 +44,16 @@ def test_resolve_paths_dirs_and_files(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_format_sarif_and_github_use_diagnostic_severity_info(tmp_path: Path) -> None:
+    p = tmp_path / "z.py"
+    diags = [Diagnostic("JL002", Severity.INFO, "note", p, line=1, col=0)]
+    sarif = json.loads(format_sarif(diags, tool_version="1"))
+    assert sarif["runs"][0]["results"][0]["level"] == "note"
+    gh = json.loads(format_github_annotations_json(diags))
+    assert gh["annotations"][0]["annotation_level"] == "notice"
+
+
+@pytest.mark.unit
 def test_format_text_sorts_by_location(sample_diag: list[Diagnostic]) -> None:
     text = format_text(sample_diag)
     lines = text.splitlines()

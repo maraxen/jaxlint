@@ -8,7 +8,7 @@ This page is the **canonical** roadmap. The README carries a short pointer so it
 
 ## Shipped baseline (aligned with 0.2.x)
 
-This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.2.3**); treat that as the source of truth for semver, not an informal “v0.1” label.
+This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.3.0**); treat that as the source of truth for semver, not an informal “v0.1” label.
 
 Already in tree today:
 
@@ -38,7 +38,7 @@ Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 | **Language Server (LSP)** | **Shipped (v1):** optional **`jaxlint[lsp]`** — Pygls **stdio** server, **full** sync, **`file://`** only, **`load_config(path.parent)`**, **`diagnostics_for_python_source`** (no disk cache). **Remaining:** debounce/client policy, richer LSP features only if they stay thin (formatting still out of scope for this server). |
 | **HLO diagnostics** | Optional analysers over lowered IR/text (similar in spirit to “HLO dump regex” tooling described in jaxbeans discussions): scatter→gather fusion gaps, noisy kernel launches — scoped to **`jaxlint.hlo`**. |
 | **Performance at scale** | **Shipped (May 2026):** opt-in disk cache via **`jaxlint check --cache-dir`** and **`[tool.jaxlint] cache-dir`** (serialized diagnostics; config fingerprint + file stats). **Shipped (Aug 2026):** single parse per file on `check`, `run_checks(..., jobs=)` parallelism. |
-| **Config evolution** | Per-rule overrides, SARIF/GitHub severity mapping, reproducible **`jaxlint.toml`** aside from `[tool.jaxlint]`. |
+| **Config evolution** | **Shipped (May 2026):** **`severity-overrides`** under **`[tool.jaxlint]`**, optional **`jaxlint.toml`** discovery + **`--config` file**, **`CACHE_FORMAT_VERSION`** bump with fingerprinted overrides; SARIF/GitHub levels follow post-override **`Diagnostic.severity`**. **Remaining:** reproducible standalone **`jaxlint.toml`** as the only project manifest (today still **`[tool.jaxlint]`** inside TOML), richer SARIF rule metadata / org severity policies if needed. |
 
 ## Longer horizon / exploratory
 
@@ -53,6 +53,25 @@ These are **not committed** milestones; revisit when upstream JAX and IDE ecosys
 ## How to steer this roadmap
 
 Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, **config keys**, and **test fixtures**. Breaking changes should bump minor/major semver and mention migration in the Sphinx **[Changelog](changelog.md)**.
+
+## Current sprint notes (May 2026 — Config evolution)
+
+**Theme:** **Per-rule severity overrides**, **`jaxlint.toml`** / **`--config` file**, cache namespace **v2**, SARIF/GitHub aligned with effective severity.
+
+**task_id:** `jaxlint-sprint-2026-05`
+
+**Artifact:** `.praxia/sprint-2026-05-config-evolution.md`
+
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| **CF1** | **`severity-overrides`** + **`LintConfig`** parsing / validation | **Shipped** |
+| **CF2** | **`effective_severity`** after **`rule_enabled`** (overrides win vs JL005 **`strict-shapes`**) | **Shipped** |
+| **CF3** | **`CACHE_FORMAT_VERSION = 2`** + `_canonical_config_dict` includes overrides | **Shipped** |
+| **CF4** | SARIF / GitHub JSON use runner **`Diagnostic.severity`** | **Shipped** |
+| **CF5** | **`jaxlint.toml`** discovery; **`--config`** file vs directory; same-dir conflict **error** | **Shipped** |
+| **CF6** | Docs (`configuration.md`, `cli.md`), changelog **0.3.0**, tests | **Shipped** |
+
+**Outcome review:** **APPROVE** (after remediation: cache fingerprint regression test for severity-only override delta).
 
 ## Current sprint notes (May 2026 — Agent-grade MCP v1 / “nascency”)
 

@@ -16,6 +16,14 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 - **CLI:** `jaxlint check` and `jaxlint doc` accept **`--format rich`** (Rich table: severity, rule, location, message). Depends on explicit **`rich`** (see `pyproject.toml`).
 - **Docs:** Added this changelog (per [roadmap steering](roadmap.md)).
 
+## 0.3.0
+
+- **Configuration:** Optional **`jaxlint.toml`** in each directory is preferred over **`pyproject.toml`** during upward discovery; both in the same directory is a **load-time error**. **`--config`** may point at a **`jaxlint.toml`** or **`pyproject.toml`** file (parse in place, no walk) or at a directory (walk). Relative **`cache-dir`** and other paths resolve against the **directory containing the loaded config file**.
+- **Severity:** **`severity-overrides`** under **`[tool.jaxlint]`** (or **`[tool.jaxlint.severity-overrides]`**) maps rule patterns to **`error` / `warning` / `info`**. Overrides apply **after** sensors and **`rule_enabled`**, so they win over **JL005** **`strict-shapes`** promotions. Unknown override keys and invalid severities fail at **parse** time. Pattern matching matches **`select` / `ignore`** (`pattern_matches`).
+- **Cache:** **`CACHE_FORMAT_VERSION`** bumped to **`2`**; canonical config fingerprint includes **`severity-overrides`** (sorted keys).
+- **Exports:** SARIF and GitHub annotations JSON use **`Diagnostic.severity`** as emitted by the runner (post-overrides); no separate severity remap in formatters.
+- **Docs / CLI:** Updated [configuration](configuration.md) and [CLI reference](cli.md); **`starter_toml_snippet()`** mentions **`severity-overrides`**.
+
 ## 0.2.3
 
 - **MCP (agent-grade v1):** **`jaxlint_check`** accepts optional **`structured`** (JSON envelope **`jaxlint.mcp.v1`** with **`success`**, **`diagnostics`**, **`error`**, **`meta`** including **`elapsed_ms`** and **`paths_resolved`**), **`jobs`**, and **`cache_dir`** (path mode only; forwarded to **`run_checks`**). Default **`structured=false`** preserves legacy behaviour (diagnostic array JSON or **`error:`** strings). Source mode rejects **`jobs`** / **`cache_dir`** with **`unsupported_option`** when structured. Invalid **`jobs`** maps to **`invalid_argument`** (legacy **`error:`** + message).

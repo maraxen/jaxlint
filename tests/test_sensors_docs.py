@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from jaxlint.core.config import LintConfig
+from jaxlint.core.diagnostic import Severity
 from jaxlint.core.runner import run_checks
 
 
@@ -51,6 +52,19 @@ def test_perf_rule_fixtures(fixtures_dir: Path, filename: str, rule_id: str) -> 
     diags = run_checks([p], cfg=jl_only, perf=True, doc=False, mathjx=False)
     ids = {d.rule_id for d in diags}
     assert rule_id in ids
+
+
+@pytest.mark.integration
+def test_jl005_strict_shapes_override_downgrades_to_warning(fixtures_dir: Path) -> None:
+    p = fixtures_dir / "jl005_shape_in_kernel.py"
+    cfg = LintConfig(
+        select=frozenset(["JL"]),
+        strict_shapes=True,
+        severity_overrides={"JL005": Severity.WARNING},
+    )
+    diags = run_checks([p], cfg=cfg, perf=True, doc=False, mathjx=False)
+    jl005 = [d for d in diags if d.rule_id == "JL005"]
+    assert jl005 and all(d.severity.value == "warning" for d in jl005)
 
 
 @pytest.mark.integration

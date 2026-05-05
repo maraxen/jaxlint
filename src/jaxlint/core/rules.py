@@ -28,6 +28,8 @@ RULES: list[tuple[str, Severity, str]] = [
     ("JM003", Severity.WARNING, "Large math block with little surrounding prose."),
 ]
 
+KNOWN_RULE_IDS: frozenset[str] = frozenset(rule_id for rule_id, _, _ in RULES)
+
 
 def describe_rules() -> str:
     lines = []

@@ -7,7 +7,7 @@ If no subcommand is given, Typer shows help (`no_args_is_help`).
 ## Global behavior
 
 - **Paths:** Most commands accept zero or more file or directory paths. If omitted, the default is the current directory (`.`).
-- **`--config PATH`:** Directory used as the starting point when searching upward for `pyproject.toml` (see [configuration](configuration.md)). Defaults to the current working directory.
+- **`--config PATH`:** Config discovery anchor (see [configuration](configuration.md)). May be a **directory** (walk upward for `jaxlint.toml` then `pyproject.toml`) or a **file** path to **`jaxlint.toml`** or **`pyproject.toml`** (parse that file only; relative paths inside the file resolve against its directory). Defaults to the current working directory when omitted.
 
 ## `jaxlint check`
 
@@ -19,11 +19,11 @@ Run performance (AST) sensors and, unless disabled, docstring sections + MathJax
 | `--no-doc` | Skip docstring sections and MathJax. |
 | `--no-perf` | Skip AST performance sensors. |
 | `--format`, `-f` | `text` (default), `compact` (one line per diagnostic: `path:line:col: severity: message (rule_id)`), `json`, `github`, **`sarif`** ([SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html), alias `sarif-2.1.0` — best-effort; not validated for GitHub Advanced Security), or **`rich`** (table layout via [Rich](https://rich.readthedocs.io/); uses plain box drawing when stdout is not a TTY). |
-| `--config` | `pyproject.toml` search anchor (directory). |
+| `--config` | Config file (`jaxlint.toml` / `pyproject.toml`) or directory to search from. |
 | `--select` | Comma-separated rule ID **prefixes**; overrides config `select`. |
 | `--ignore` | Comma-separated prefixes to ignore; overrides config `ignore`. |
 | `--jobs`, `-j` | Number of parallel workers over **files** (thread pool). Default: `min(32, CPU count)` (see `os.process_cpu_count()`). Use **`-j 1`** for a fully serial run (no pool). |
-| `--cache-dir` | Optional directory for an **on-disk cache** of per-file diagnostics (JSON). Speeds up repeated `check` runs when sources are unchanged. Overrides `[tool.jaxlint] cache-dir` in `pyproject.toml` when passed. Invalid or corrupt cache entries are ignored (fail-open). |
+| `--cache-dir` | Optional directory for an **on-disk cache** of per-file diagnostics (JSON). Speeds up repeated `check` runs when sources are unchanged. Overrides **`[tool.jaxlint] cache-dir`** when passed. Invalid or corrupt cache entries are ignored (fail-open). |
 
 **Exit code:** `1` if any diagnostic has severity `error`; otherwise `0`. Invalid `--format` exits **`2`** (same as `jaxlint hlo` when the HLO extra is missing).
 
@@ -35,7 +35,7 @@ Docstring sections + MathJax only (no AST performance sensors).
 |--------|-------------|
 | `PATHS...` | As in `check`. |
 | `--format`, `-f` | `text`, `compact`, `json`, `github`, **`sarif`**, or **`rich`**. Same semantics as `check`. |
-| `--config` | As in `check`. |
+| `--config` | As in `check` (directory walk or explicit config file). |
 | `--select`, `--ignore` | As in `check`. |
 
 **Exit code:** `1` if any `error`; else `0`. Invalid `--format` exits **`2`**.
@@ -50,7 +50,7 @@ Rubric scoring for docstrings (see `RubricScorer` in `jaxlint.core.doc.rubric_im
 | `--jsonl PATH` | Score entries from a JSONL file (see implementation for expected keys). |
 | `--baseline PATH` | With `--jsonl`, print mean/pass-rate comparison when the file exists. |
 | `--threshold FLOAT` | Override config `rubric-threshold` (default from `[tool.jaxlint]`). |
-| `--config` | `pyproject.toml` search anchor. |
+| `--config` | As in `check`. |
 
 **Exit code:** `1` if any scored item is below the threshold (file mode or JSONL mode); `0` otherwise. Syntax errors in a scanned `.py` print a message and count as failure for the file-walk path.
 

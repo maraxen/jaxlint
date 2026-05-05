@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from jaxlint.core.config import LintConfig, load_config, rule_enabled
+from jaxlint.core.config import LintConfig, effective_severity, load_config, rule_enabled
+from jaxlint.core.diagnostic import Diagnostic, Severity
 
 
 @pytest.fixture
@@ -53,6 +54,98 @@ def test_load_config_missing_file_uses_defaults(tmp_path: Path, monkeypatch: pyt
     monkeypatch.chdir(tmp_path)
     cfg = load_config(tmp_path)
     assert cfg == LintConfig.default()
+
+
+@pytest.mark.unit
+def test_effective_severity_override_wins_over_emitted(tmp_path: Path) -> None:
+    p = tmp_path / "f.py"
+    d = Diagnostic("JL005", Severity.ERROR, "shape", p, line=1, col=0)
+    cfg = LintConfig(severity_overrides={"JL005": Severity.WARNING})
+    assert effective_severity(d, cfg).severity == Severity.WARNING
+
+
+@pytest.mark.unit
+def test_load_config_jaxlint_toml_over_pyproject_in_walk(tmp_path: Path) -> None:
+    root = tmp_path / "proj"
+    pkg = root / "pkg"
+    pkg.mkdir(parents=True)
+    (root / "pyproject.toml").write_text(
+        '[tool.jaxlint]\ndocstring-style = "google"\n',
+        encoding="utf-8",
+    )
+    (pkg / "jaxlint.toml").write_text(
+        '[tool.jaxlint]\ndocstring-style = "numpy"\n',
+        encoding="utf-8",
+    )
+    cfg = load_config(pkg)
+    assert cfg.docstring_style == "numpy"
+
+
+@pytest.mark.unit
+def test_load_config_conflict_same_directory_raises(tmp_path: Path) -> None:
+    d = tmp_path / "here"
+    d.mkdir()
+    (d / "jaxlint.toml").write_text("[tool.jaxlint]\n", encoding="utf-8")
+    (d / "pyproject.toml").write_text("[tool.jaxlint]\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="Both jaxlint.toml and pyproject.toml"):
+        load_config(d)
+
+
+@pytest.mark.unit
+def test_load_config_direct_config_file(tmp_path: Path) -> None:
+    cfg_path = tmp_path / "pyproject.toml"
+    cfg_path.write_text('[tool.jaxlint]\nstrict-shapes = true\n', encoding="utf-8")
+    cfg = load_config(cfg_path)
+    assert cfg.strict_shapes is True
+
+
+@pytest.mark.unit
+def test_load_config_direct_jaxlint_file(tmp_path: Path) -> None:
+    jxl = tmp_path / "jaxlint.toml"
+    jxl.write_text('[tool.jaxlint]\nstrict-shapes = true\n', encoding="utf-8")
+    assert load_config(jxl).strict_shapes is True
+
+
+@pytest.mark.unit
+def test_load_config_file_must_be_named(tmp_path: Path) -> None:
+    other = tmp_path / "other.toml"
+    other.write_text("[tool.jaxlint]\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="jaxlint.toml"):
+        load_config(other)
+
+
+@pytest.mark.unit
+def test_severity_overrides_invalid_severity_raises(tmp_path: Path) -> None:
+    p = tmp_path / "pyproject.toml"
+    p.write_text(
+        '[tool.jaxlint]\nseverity-overrides = { JL005 = "oops" }\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="invalid severity"):
+        load_config(p)
+
+
+@pytest.mark.unit
+def test_severity_overrides_unknown_rule_key_raises(tmp_path: Path) -> None:
+    p = tmp_path / "pyproject.toml"
+    p.write_text(
+        '[tool.jaxlint]\nseverity-overrides = { XX999 = "warning" }\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="does not match any known rule"):
+        load_config(p)
+
+
+@pytest.mark.unit
+def test_severity_overrides_nested_table(tmp_path: Path) -> None:
+    p = tmp_path / "pyproject.toml"
+    p.write_text(
+        '[tool.jaxlint]\nstrict-shapes = true\n\n[tool.jaxlint.severity-overrides]\nJL005 = "warning"\n',
+        encoding="utf-8",
+    )
+    cfg = load_config(p)
+    assert cfg.strict_shapes is True
+    assert cfg.severity_overrides["JL005"] == Severity.WARNING
 
 
 @pytest.mark.unit

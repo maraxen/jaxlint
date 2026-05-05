@@ -12,9 +12,20 @@ from typer.testing import CliRunner
 from jaxlint.cli.main import app
 from jaxlint.core.cache import namespace_segment
 from jaxlint.core.config import LintConfig, load_config
+from jaxlint.core.diagnostic import Severity
 from jaxlint.core.runner import resolve_paths, run_checks
 
 runner = CliRunner()
+
+
+@pytest.mark.unit
+def test_namespace_segment_differs_when_only_severity_overrides_change() -> None:
+    """Fingerprint must move when overrides change so cached diagnostics cannot cross namespaces."""
+    base = LintConfig()
+    tweaked = LintConfig(severity_overrides={"JL001": Severity.WARNING})
+    a = namespace_segment(base, perf=True, doc=False, mathjx=False)
+    b = namespace_segment(tweaked, perf=True, doc=False, mathjx=False)
+    assert a != b
 
 
 @pytest.mark.integration

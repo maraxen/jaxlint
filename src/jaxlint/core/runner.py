@@ -14,7 +14,7 @@ from rich.table import Table
 from rich.text import Text
 
 from jaxlint.core.cache import store_diagnostics, try_load_diagnostics
-from jaxlint.core.config import LintConfig, load_config, rule_enabled
+from jaxlint.core.config import LintConfig, effective_severity, load_config, rule_enabled
 from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.doc.mathjax import mathjax_diagnostics
 from jaxlint.core.doc.sections import doc_diagnostics_from_source
@@ -286,12 +286,12 @@ def _diagnostics_from_parsed(
             return []
         for d in perf_diagnostics_from_tree(py, cfg, ctx.tree):
             if rule_enabled(d.rule_id, cfg, py):
-                out.append(d)
+                out.append(effective_severity(d, cfg))
         for d in doc_diagnostics_from_source(
             py, cfg, ctx.source, ctx.tree, sections=doc, mathjax=mathjx
         ):
             if rule_enabled(d.rule_id, cfg, py):
-                out.append(d)
+                out.append(effective_severity(d, cfg))
         return out
 
     if perf:
@@ -299,7 +299,7 @@ def _diagnostics_from_parsed(
             return []
         for d in perf_diagnostics_from_tree(py, cfg, ctx.tree):
             if rule_enabled(d.rule_id, cfg, py):
-                out.append(d)
+                out.append(effective_severity(d, cfg))
     if want_doc:
         if ctx.tree is None:
             return []
@@ -307,7 +307,7 @@ def _diagnostics_from_parsed(
             py, cfg, ctx.source, ctx.tree, sections=doc, mathjax=mathjx
         ):
             if rule_enabled(d.rule_id, cfg, py):
-                out.append(d)
+                out.append(effective_severity(d, cfg))
     return out
 
 
@@ -399,5 +399,5 @@ def extract_math_only(doc: str, path: Path, cfg: LintConfig) -> list[Diagnostic]
     out: list[Diagnostic] = []
     for d in mathjax_diagnostics(doc, path, line_base=1):
         if rule_enabled(d.rule_id, cfg, path):
-            out.append(d)
+            out.append(effective_severity(d, cfg))
     return out
