@@ -17,17 +17,17 @@ Already in tree today:
 | **Config** | `[tool.jaxlint]` parsing, selects/ignores/per-file ignores. |
 | **Testing** | Pytest tiers (`smoke` / `unit` / `integration` / `needs_jax`), coverage floor, GitHub Actions. Pull requests run **smoke** + lint; **full pytest + coverage** runs on **`main` pushes only** (`lint-test`). |
 | **Docs** | Sphinx + MyST + Read the Docs (HTML plus **PDF** plus **htmlzip** on version builds). |
-| **`jaxlint[hlo]`** | Optional imports; CLI only checks the extra — **heavy HLO behaviour is lightly tested.** |
+| **`jaxlint[hlo]`** | Optional imports; CLI only checks the extra — **merge-blocking `needs_jax` tests** cover export → `SemanticAnalyzer` / `GraphAuditSensor` behaviour (including `audit_exported`, while/outfeed rules, `get_operations`, checkify edges), not only import smoke. |
 
 ## Near term (next few releases)
 
 Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 
 1. **Output formats** — **Shipped:** GitHub annotation JSON, **SARIF** 2.1.0 (`--format sarif`), and **`compact`** text. **Remaining:** consider **Rich**-based human layout (Typer already pulls Rich transitively).
-2. **Hosted docs hygiene** — Remove RTD/GitHub **`linkcheck_ignore` placeholders** in `docs/conf.py` once real URLs exist; tighten `sphinx.fail_on_warning` on RTD when clean.
+2. **Hosted docs hygiene** — **`sphinx.fail_on_warning` is already on** in `.readthedocs.yml`. **Remaining:** shrink **`linkcheck_ignore`** in `docs/conf.py` once the canonical RTD/HTML URLs and GitHub targets respond reliably to automated linkcheck (the root Read the Docs URL and GitHub may 404 or rate-limit until the project and links are stable).
 3. **CI parity** — **Shipped:** required **`jax-hlo`** job installs `jaxlint[hlo]` and runs `pytest -m needs_jax` (merge-blocking). PR **`lint-test`** jobs run smoke + Ruff; full suite + coverage on **`main`** only.
 4. **API reference** — **Shipped:** Sphinx **autodoc** / **autosummary** for `jaxlint.core` (and configuration types under `jaxlint.core.config`; see **`api`** in the docs toctree). **`jaxlint.hlo`** stays a narrative-only page (`hlo`) so JAX is not imported on RTD builders.
-5. **HLO credibility** — Targeted pytest (and/or golden IR snippets) for `SemanticAnalyzer` / `GraphAuditSensor`, not only import smoke.
+5. **HLO credibility** — **Shipped:** targeted pytest for `SemanticAnalyzer` / `GraphAuditSensor` (`get_operations`, `audit_kernel` / `audit_exported`, while and outfeed violation paths, `instrument_and_run` checkify failure). **Remaining:** optional **golden IR** snippets (or broader MLIR parsing) if we want version-pinned IR regression tests without relying only on live `jax.export` text.
 
 ## Medium term
 
