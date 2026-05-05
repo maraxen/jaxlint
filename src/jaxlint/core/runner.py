@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
+from io import StringIO
 from pathlib import Path
+
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 
 from jaxlint.core.config import LintConfig, load_config, rule_enabled
 from jaxlint.core.diagnostic import Diagnostic, Severity
@@ -157,6 +164,48 @@ def format_sarif(diagnostics: list[Diagnostic], *, tool_version: str) -> str:
     return json.dumps(payload, indent=2)
 
 
+def format_rich(diagnostics: list[Diagnostic]) -> str:
+    """Render diagnostics as a Rich table (plain ASCII when stdout is not a TTY)."""
+
+    buf = StringIO()
+    tty = sys.stdout.isatty()
+    color = tty and not os.environ.get("NO_COLOR", "").strip()
+    console = Console(
+        file=buf,
+        force_terminal=color,
+        no_color=not color,
+        highlight=False,
+        width=120,
+        soft_wrap=True,
+        safe_box=not tty,
+    )
+
+    if not diagnostics:
+        console.print(Text("No diagnostics.", style="dim" if color else ""))
+        return buf.getvalue()
+
+    table = Table(show_header=True, header_style="bold", expand=False)
+    table.add_column("Severity", style=None, no_wrap=True, min_width=8)
+    table.add_column("Rule", no_wrap=True, min_width=6)
+    table.add_column("Location", overflow="fold", min_width=24)
+    table.add_column("Message", overflow="fold")
+
+    def severity_style(sev: Severity) -> str:
+        if sev == Severity.ERROR:
+            return "bold red" if color else ""
+        if sev == Severity.WARNING:
+            return "yellow" if color else ""
+        return "cyan" if color else ""
+
+    for d in sorted(diagnostics, key=lambda x: x.sort_key()):
+        loc = f"{d.path}:{d.line}:{d.col}"
+        sev_text = Text(d.severity.value, style=severity_style(d.severity))
+        table.add_row(sev_text, d.rule_id, loc, d.message)
+
+    console.print(table)
+    return buf.getvalue()
+
+
 def format_diagnostics(diagnostics: list[Diagnostic], format_name: str) -> str:
     fmt = format_name.strip().lower()
     if fmt == "text":
@@ -171,7 +220,9 @@ def format_diagnostics(diagnostics: list[Diagnostic], format_name: str) -> str:
         from jaxlint import __version__ as jaxlint_version
 
         return format_sarif(diagnostics, tool_version=jaxlint_version)
-    msg = f"Unknown --format {format_name!r} (expected text, compact, json, github, or sarif)"
+    if fmt == "rich":
+        return format_rich(diagnostics)
+    msg = f"Unknown --format {format_name!r} (expected text, compact, json, github, sarif, or rich)"
     raise ValueError(msg)
 
 

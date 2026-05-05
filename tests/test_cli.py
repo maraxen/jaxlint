@@ -100,6 +100,29 @@ def test_cli_check_compact_format_on_clean(clean_fixture: Path) -> None:
 
 
 @pytest.mark.integration
+def test_cli_check_rich_format_on_clean(clean_fixture: Path) -> None:
+    r = runner.invoke(app, ["check", "--no-doc", "--format", "rich", str(clean_fixture)])
+    assert r.exit_code == 0
+    assert "No diagnostics" in r.output
+
+
+@pytest.mark.integration
+def test_cli_check_rich_format_with_violation(fixtures_dir: Path) -> None:
+    p = fixtures_dir / "jl001_scatter_gather.py"
+    r = runner.invoke(app, ["check", "--no-doc", "--format", "rich", str(p)])
+    assert r.exit_code == 1
+    assert "JL001" in r.output
+    assert "Severity" in r.output and "Message" in r.output
+
+
+@pytest.mark.integration
+def test_cli_doc_rich_format_on_clean(clean_fixture: Path) -> None:
+    r = runner.invoke(app, ["doc", "--format", "rich", str(clean_fixture)])
+    assert r.exit_code == 0
+    assert "No diagnostics" in r.output
+
+
+@pytest.mark.integration
 def test_cli_check_sarif_format(fixtures_dir: Path) -> None:
     p = fixtures_dir / "jl001_scatter_gather.py"
     r = runner.invoke(app, ["check", "--no-doc", "--format", "sarif", str(p)])

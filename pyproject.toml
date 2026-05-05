@@ -19,6 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "griffe>=2.0.2",
+    "rich>=13.0.0",
     "typer>=0.12.0",
 ]
 

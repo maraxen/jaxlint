@@ -7,6 +7,7 @@ from jaxlint.core.runner import (
     format_diagnostics,
     format_github_annotations_json,
     format_json,
+    format_rich,
     format_sarif,
     format_text,
     resolve_paths,
@@ -25,5 +26,6 @@ __all__ = [
     "format_json",
     "format_github_annotations_json",
     "format_sarif",
+    "format_rich",
     "format_diagnostics",
 ]

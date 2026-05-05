@@ -409,6 +409,7 @@ version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "griffe" },
+    { name = "rich" },
     { name = "typer" },
 ]
 
@@ -435,6 +436,7 @@ requires-dist = [
     { name = "griffe", specifier = ">=2.0.2" },
     { name = "jax", marker = "extra == 'hlo'", specifier = ">=0.4.30" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = "==4.0.1" },
+    { name = "rich", specifier = ">=13.0.0" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = "==8.2.3" },
     { name = "sphinx-book-theme", marker = "extra == 'docs'", specifier = "==1.1.4" },
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = "==0.5.2" },

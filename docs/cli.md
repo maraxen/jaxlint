@@ -18,7 +18,7 @@ Run performance (AST) sensors and, unless disabled, docstring sections + MathJax
 | `PATHS...` | Files or directories (`*.py` discovered under directories). |
 | `--no-doc` | Skip docstring sections and MathJax. |
 | `--no-perf` | Skip AST performance sensors. |
-| `--format`, `-f` | `text` (default), `compact` (one line per diagnostic: `path:line:col: severity: message (rule_id)`), `json`, `github`, or **`sarif`** ([SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html), alias `sarif-2.1.0` — best-effort; not validated for GitHub Advanced Security). |
+| `--format`, `-f` | `text` (default), `compact` (one line per diagnostic: `path:line:col: severity: message (rule_id)`), `json`, `github`, **`sarif`** ([SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html), alias `sarif-2.1.0` — best-effort; not validated for GitHub Advanced Security), or **`rich`** (table layout via [Rich](https://rich.readthedocs.io/); uses plain box drawing when stdout is not a TTY). |
 | `--config` | `pyproject.toml` search anchor (directory). |
 | `--select` | Comma-separated rule ID **prefixes**; overrides config `select`. |
 | `--ignore` | Comma-separated prefixes to ignore; overrides config `ignore`. |
@@ -32,7 +32,7 @@ Docstring sections + MathJax only (no AST performance sensors).
 | Option | Description |
 |--------|-------------|
 | `PATHS...` | As in `check`. |
-| `--format`, `-f` | `text`, `compact`, `json`, `github`, or **`sarif`**. Same semantics as `check`. |
+| `--format`, `-f` | `text`, `compact`, `json`, `github`, **`sarif`**, or **`rich`**. Same semantics as `check`. |
 | `--config` | As in `check`. |
 | `--select`, `--ignore` | As in `check`. |
 
@@ -77,3 +77,5 @@ For `check` and `doc` with `--format json`, output is a JSON array of objects wi
 With `--format github`, output is a JSON object with an `annotations` array. Each element uses GitHub check run field names (`start_line`, `end_line`, `annotation_level`, `message`, `title`, `path`) suitable for tooling that posts [check run annotations](https://docs.github.com/en/rest/checks/runs). Severity maps to `annotation_level`: `error` → `failure`, `warning` → `warning`, `info` → `notice`. Single-line diagnostics may include `start_column` / `end_column` (**1-based**, per GitHub); **`start_line` ≠ `end_line`** omits columns, matching the API restriction on multiline annotations.
 
 With `--format sarif` (alias `sarif-2.1.0`), output is a minimal [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html) log: top-level **`$schema`**, **`version`**: `"2.1.0"`, and **`runs[0]`** with **`tool.driver`** for `jaxlint` and **`results`**. Each result includes **`ruleId`**, SARIF **`level`** (`error` / `warning` / `note` — `info` diagnostics map to `note`), **`message.text`**, and **`locations[].physicalLocation`** with **`artifactLocation.uri`** as an absolute `file:` URI and **`region`** (`startLine`, `endLine`; **`startColumn` / `endColumn`** only when the span is one line — same convention as GitHub annotations above). This is **best-effort for generic SARIF tooling** and is **not guaranteed** for GitHub Advanced Security upload requirements.
+
+With **`--format rich`**, output is a UTF-8 text table (**Severity**, **Rule**, **Location** as `path:line:col`, **Message**). When there are no diagnostics, a single line reads **`No diagnostics.`** When standard output is a TTY and **`NO_COLOR`** is unset, severity cells use color; otherwise output is uncolored, and the table uses ASCII-safe borders when stdout is not a TTY (see `format_rich` in `jaxlint.core.runner`).

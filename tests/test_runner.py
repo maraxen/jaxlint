@@ -12,6 +12,7 @@ from jaxlint.core.runner import (
     format_diagnostics,
     format_github_annotations_json,
     format_json,
+    format_rich,
     format_sarif,
     format_text,
     resolve_paths,
@@ -157,10 +158,25 @@ def test_format_compact_sorts_like_text(sample_diag: list[Diagnostic]) -> None:
 
 
 @pytest.mark.unit
+def test_format_rich_empty() -> None:
+    out = format_rich([])
+    assert "No diagnostics" in out
+
+
+@pytest.mark.unit
+def test_format_rich_includes_columns_and_rules(sample_diag: list[Diagnostic]) -> None:
+    out = format_rich(sample_diag)
+    assert "Severity" in out and "Rule" in out and "Location" in out and "Message" in out
+    assert "JL001" in out and "JM003" in out
+    assert "error" in out and "warning" in out
+
+
+@pytest.mark.unit
 def test_format_diagnostics_dispatch(sample_diag: list[Diagnostic]) -> None:
     assert format_diagnostics(sample_diag, "text") == format_text(sample_diag)
     assert format_diagnostics(sample_diag, "compact") == format_compact(sample_diag)
     assert format_diagnostics(sample_diag, "json") == format_json(sample_diag)
+    assert format_diagnostics(sample_diag, "rich") == format_rich(sample_diag)
     assert format_diagnostics(sample_diag, "github") == format_github_annotations_json(sample_diag)
     assert format_diagnostics(sample_diag, "github-annotations") == format_github_annotations_json(sample_diag)
     g = json.loads(format_diagnostics(sample_diag, "github"))
