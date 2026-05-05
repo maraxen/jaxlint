@@ -19,6 +19,7 @@ Parsed keys live in `LintConfig` (`jaxlint.core.config`). TOML keys use **kebab-
 | `section-order` | list of strings | `Parameters`, `Returns`, `Raises`, `Examples`, `Pseudocode`, `Hardware Notes` | Canonical order for JD003 warnings. |
 | `strict-shapes` | bool | `false` | If `true`, JL005 is promoted to **error** severity. |
 | `rubric-threshold` | float | `0.75` | Default threshold for `jaxlint score`. |
+| `cache-dir` | string (path) | *(unset)* | Optional directory for caching **`jaxlint check`** diagnostics. Relative paths are resolved against the directory containing the discovered `pyproject.toml`. **`jaxlint check --cache-dir`** overrides this when the CLI flag is present. |
 | `per-file-ignores` | table | `{}` | Map of **glob patterns** → rule patterns to disable for matching paths. |
 
 ### `select`, `ignore`, and `per-file-ignores` patterns

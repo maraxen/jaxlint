@@ -37,7 +37,7 @@ Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 |------------|------|
 | **Language Server (LSP)** | Thin wrapper that streams **`Diagnostic`** objects to editors (diagnostics-only v1; formatting out of scope). |
 | **HLO diagnostics** | Optional analysers over lowered IR/text (similar in spirit to “HLO dump regex” tooling described in jaxbeans discussions): scatter→gather fusion gaps, noisy kernel launches — scoped to **`jaxlint.hlo`**. |
-| **Performance at scale** | **In progress (Aug 2026):** single parse per file on `check`, `run_checks(..., jobs=)` parallelism; **deferred:** opt-in disk cache (`--cache-dir`, next sprint). |
+| **Performance at scale** | **Shipped (May 2026):** opt-in disk cache via **`jaxlint check --cache-dir`** and **`[tool.jaxlint] cache-dir`** (serialized diagnostics; config fingerprint + file stats). **Shipped (Aug 2026):** single parse per file on `check`, `run_checks(..., jobs=)` parallelism. |
 | **Config evolution** | Per-rule overrides, SARIF/GitHub severity mapping, reproducible **`jaxlint.toml`** aside from `[tool.jaxlint]`. |
 
 ## Longer horizon / exploratory
@@ -53,6 +53,21 @@ These are **not committed** milestones; revisit when upstream JAX and IDE ecosys
 ## How to steer this roadmap
 
 Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, **config keys**, and **test fixtures**. Breaking changes should bump minor/major semver and mention migration in the Sphinx **[Changelog](changelog.md)**.
+
+## Current sprint notes (May 2026 — Disk cache / P09)
+
+**Theme:** **Opt-in disk cache** for `jaxlint check` — roadmap **P09** from the August scale sprint (now delivered).
+
+**task_id:** `jaxlint-sprint-2026-05-p09-cache` (artifact: `.praxia/sprint-2026-05-disk-cache.md`)
+
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| **P09a** | `--cache-dir` on `check`; `run_checks(..., cache_dir=)` | **Shipped** |
+| **P09b** | `jaxlint.core.cache` — fingerprint, JSON envelope, atomic store | **Shipped** |
+| **P09c** | Runner wraps per-file diagnostics with cache get/put | **Shipped** |
+| **P09d** | `[tool.jaxlint] cache-dir`; CLI overrides TOML | **Shipped** |
+| **P09e** | POSIX `flock` on writes; fail-open on corrupt/missing entries | **Shipped** |
+| **P09f** | Tests: warm/cold, parallel, invalidation, namespace, CLI, corrupt blob | **Shipped** |
 
 ## Current sprint notes (August 2026 — Scale & performance)
 
@@ -70,7 +85,7 @@ Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, 
 | **P06** | CLI `-j` / `--jobs` on `check` | **Shipped** |
 | **P07** | `tests/test_runner_parallel.py` | **Shipped** |
 | **P08** | Docs: cli, changelog, roadmap, library | **Shipped** |
-| **P09** | Opt-in disk cache (`--cache-dir`) | **Deferred** (next sprint) |
+| **P09** | Opt-in disk cache (`--cache-dir`) | **Shipped** (May 2026 sprint; see above) |
 
 ## Current sprint notes (July 2026 — Trust surfaces)
 

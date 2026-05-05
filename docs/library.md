@@ -36,6 +36,7 @@ cfg = LintConfig(select=frozenset(["JL"]), strict_shapes=True)
 paths = [Path("src/myproject")]
 diags = run_checks(paths, cfg=cfg, perf=True, doc=True, mathjx=True)
 # Optional: jobs=None (default parallel budget) or jobs=1 (serial), jobs>1 (thread pool).
+# Optional: cache_dir=Path(".jaxlint-cache") — on-disk cache of per-file diagnostics (see configuration.md).
 ```
 
 - **`run_checks` return order:** The list is **pre-sorted** by `Diagnostic.sort_key()` (`path`, `line`, `column`, `rule_id`). Callers should not rely on discovery or insertion order.

@@ -39,6 +39,11 @@ def check_cmd(
         "-j",
         help="Parallel file workers (default: min(32, CPU count); use 1 for serial)",
     ),
+    cache_dir: Path | None = typer.Option(
+        None,
+        "--cache-dir",
+        help="Optional directory for on-disk diagnostic cache (overrides [tool.jaxlint] cache-dir)",
+    ),
 ) -> None:
     if not paths:
         paths = [Path(".")]
@@ -48,6 +53,7 @@ def check_cmd(
         cfg = replace(cfg, select=frozenset(s.strip() for s in select.split(",") if s.strip()))
     if ignore:
         cfg = replace(cfg, ignore=frozenset(s.strip() for s in ignore.split(",") if s.strip()))
+    effective_cache = cache_dir.resolve() if cache_dir is not None else cfg.cache_dir
     try:
         diags = run_checks(
             paths,
@@ -57,6 +63,7 @@ def check_cmd(
             mathjx=not no_doc,
             config_start=start,
             jobs=jobs,
+            cache_dir=effective_cache,
         )
         typer.echo(format_diagnostics(diags, format_))
     except ValueError as e:

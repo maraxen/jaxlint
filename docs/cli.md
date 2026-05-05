@@ -23,6 +23,7 @@ Run performance (AST) sensors and, unless disabled, docstring sections + MathJax
 | `--select` | Comma-separated rule ID **prefixes**; overrides config `select`. |
 | `--ignore` | Comma-separated prefixes to ignore; overrides config `ignore`. |
 | `--jobs`, `-j` | Number of parallel workers over **files** (thread pool). Default: `min(32, CPU count)` (see `os.process_cpu_count()`). Use **`-j 1`** for a fully serial run (no pool). |
+| `--cache-dir` | Optional directory for an **on-disk cache** of per-file diagnostics (JSON). Speeds up repeated `check` runs when sources are unchanged. Overrides `[tool.jaxlint] cache-dir` in `pyproject.toml` when passed. Invalid or corrupt cache entries are ignored (fail-open). |
 
 **Exit code:** `1` if any diagnostic has severity `error`; otherwise `0`. Invalid `--format` exits **`2`** (same as `jaxlint hlo` when the HLO extra is missing).
 

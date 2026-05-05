@@ -23,6 +23,7 @@ class LintConfig:
     strict_shapes: bool = False
     rubric_threshold: float = 0.75
     per_file_ignores: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    cache_dir: Path | None = None
 
     @classmethod
     def default(cls) -> LintConfig:
@@ -58,6 +59,11 @@ def _parse_tool_jaxlint(path: Path) -> LintConfig:
 
     pf = raw.get("per-file-ignores") or {}
     cfg.per_file_ignores = {k: tuple(v) if isinstance(v, list) else (v,) for k, v in pf.items()}
+
+    cd_raw = raw.get("cache-dir")
+    if cd_raw:
+        p = Path(str(cd_raw))
+        cfg.cache_dir = p.resolve() if p.is_absolute() else (path.parent / p).resolve()
     return cfg
 
 
@@ -99,6 +105,8 @@ required-sections = ["Parameters", "Returns"]
 # section-order = ["Parameters", "Returns", "Examples"]
 strict-shapes = false
 rubric-threshold = 0.75
+
+# cache-dir = ".jaxlint-cache"   # optional; resolved relative to pyproject.toml directory
 
 # [tool.jaxlint.per-file-ignores]
 # "tests/**" = ["JL005"]

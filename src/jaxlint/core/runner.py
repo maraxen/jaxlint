@@ -13,6 +13,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
+from jaxlint.core.cache import store_diagnostics, try_load_diagnostics
 from jaxlint.core.config import LintConfig, load_config, rule_enabled
 from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.doc.mathjax import mathjax_diagnostics
@@ -232,6 +233,40 @@ def _default_jobs() -> int:
     return min(32, os.process_cpu_count() or 1)
 
 
+def _cached_diagnostics_for_file(
+    py: Path,
+    cfg: LintConfig,
+    *,
+    perf: bool,
+    doc: bool,
+    mathjx: bool,
+    cache_dir: Path | None,
+) -> list[Diagnostic]:
+    if cache_dir is not None:
+        hit = try_load_diagnostics(
+            py,
+            cfg=cfg,
+            perf=perf,
+            doc=doc,
+            mathjx=mathjx,
+            cache_dir=cache_dir,
+        )
+        if hit is not None:
+            return hit
+    out = _diagnostics_for_file(py, cfg, perf=perf, doc=doc, mathjx=mathjx)
+    if cache_dir is not None:
+        store_diagnostics(
+            py,
+            cfg=cfg,
+            perf=perf,
+            doc=doc,
+            mathjx=mathjx,
+            cache_dir=cache_dir,
+            diagnostics=out,
+        )
+    return out
+
+
 def _diagnostics_for_file(
     py: Path,
     cfg: LintConfig,
@@ -277,6 +312,7 @@ def run_checks(
     mathjx: bool = True,
     config_start: Path | None = None,
     jobs: int | None = None,
+    cache_dir: Path | None = None,
 ) -> list[Diagnostic]:
     if jobs is not None and jobs < 1:
         msg = f"jobs must be >= 1, got {jobs}"
@@ -287,7 +323,14 @@ def run_checks(
     effective = _default_jobs() if jobs is None else jobs
 
     def work(py: Path) -> list[Diagnostic]:
-        return _diagnostics_for_file(py, cfg, perf=perf, doc=doc, mathjx=mathjx)
+        return _cached_diagnostics_for_file(
+            py,
+            cfg,
+            perf=perf,
+            doc=doc,
+            mathjx=mathjx,
+            cache_dir=cache_dir,
+        )
 
     batches: list[list[Diagnostic]] = []
     if not py_files:
