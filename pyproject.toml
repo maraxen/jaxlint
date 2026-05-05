@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jaxlint"
+version = "0.1.0"
+description = "CLI and library for JAX-oriented static checks, docstring quality, and optional HLO analysis"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Marielle" }]
+keywords = ["jax", "lint", "docstring", "static-analysis"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
+dependencies = [
+    "griffe>=2.0.2",
+    "typer>=0.12.0",
+]
+
+[project.optional-dependencies]
+hlo = [
+    "jax>=0.4.30",
+]
+
+[project.scripts]
+jaxlint = "jaxlint.cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jaxlint"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "smoke: Fast checks for PR CI (imports + minimal CLI)",
+    "unit: Focused checks on parsers, sensors, or helpers without full orchestration",
+    "integration: run_checks(), Typer invocation, multi-subsystem flows",
+    "slow: Heavier workloads (skipped in quick local runs)",
+    "needs_jax: Requires jax / jaxlint[hlo] extras",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.0",
+]
+
+[tool.coverage.run]
+source_pkgs = ["jaxlint"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
