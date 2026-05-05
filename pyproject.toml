@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jaxlint"
-version = "0.2.1"
+version = "0.2.2"
 description = "CLI and library for JAX-oriented static checks, docstring quality, and optional HLO analysis"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -36,10 +36,14 @@ hlo = [
 lsp = [
     "pygls>=2.0.0,<3",
 ]
+mcp = [
+    "mcp>=1.8.0",
+]
 
 [project.scripts]
 jaxlint = "jaxlint.cli.main:app"
 jaxlint-lsp = "jaxlint.lsp.__main__:main"
+jaxlint-mcp = "jaxlint.mcp.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/jaxlint"]
@@ -57,6 +61,7 @@ markers = [
     "slow: Heavier workloads (skipped in quick local runs)",
     "needs_jax: Requires jax / jaxlint[hlo] extras",
     "lsp: Language server tests (requires jaxlint[lsp])",
+    "mcp: MCP server tests (requires jaxlint[mcp])",
 ]
 
 [dependency-groups]

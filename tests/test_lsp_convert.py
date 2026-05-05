@@ -13,6 +13,8 @@ from lsprotocol import types
 from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.lsp.convert import jaxlint_to_lsp_diagnostic
 
+pytestmark = [pytest.mark.lsp]
+
 
 def test_severity_mapping() -> None:
     d = Diagnostic("R", Severity.ERROR, "e", Path("a.py"), 1, 1)

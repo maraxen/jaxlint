@@ -210,3 +210,94 @@ def test_lsp_did_change_updates_diagnostics(fixtures_dir: Path, tmp_path: Path) 
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
+
+
+@pytest.mark.integration
+@pytest.mark.lsp
+def test_lsp_did_close_clears_diagnostics(fixtures_dir: Path, tmp_path: Path) -> None:
+    src = (fixtures_dir / "jd001_missing_docstring.py").read_text(encoding="utf-8")
+    doc_path = tmp_path / "jd001_missing_docstring.py"
+    doc_path.write_text(src, encoding="utf-8")
+    uri = doc_path.resolve().as_uri()
+
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "jaxlint.lsp"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        text=False,
+    )
+    assert proc.stdin is not None and proc.stdout is not None
+
+    try:
+        _write_message(
+            proc.stdin,
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "processId": None,
+                    "rootUri": None,
+                    "capabilities": {},
+                    "clientInfo": {"name": "pytest-jaxlint", "version": "0"},
+                },
+            },
+        )
+        while True:
+            msg = _read_message(proc.stdout)
+            assert msg is not None
+            if msg.get("id") == 1:
+                break
+
+        _write_message(proc.stdin, {"jsonrpc": "2.0", "method": "initialized", "params": {}})
+
+        _write_message(
+            proc.stdin,
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {
+                    "textDocument": {
+                        "uri": uri,
+                        "languageId": "python",
+                        "version": 1,
+                        "text": src,
+                    }
+                },
+            },
+        )
+
+        def next_publish() -> tuple[str, list[dict[str, Any]]]:
+            for _ in range(50):
+                msg = _read_message(proc.stdout)
+                assert msg is not None
+                if msg.get("method") == "textDocument/publishDiagnostics":
+                    params = msg.get("params") or {}
+                    return str(params.get("uri", "")), list(params.get("diagnostics") or [])
+            raise AssertionError("no publishDiagnostics")
+
+        first_uri, first_diags = next_publish()
+        assert first_uri == uri
+        assert any(str(d.get("code")) == "JD001" for d in first_diags)
+
+        _write_message(
+            proc.stdin,
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didClose",
+                "params": {"textDocument": {"uri": uri}},
+            },
+        )
+
+        close_uri, close_diags = next_publish()
+        assert close_uri == uri
+        assert close_diags == []
+    finally:
+        proc.stdin.close()
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()

@@ -23,10 +23,11 @@ uv run ruff check src tests
 | `uv run pytest -q -m unit` | Config helpers, serializers, narrowly scoped logic |
 | `uv run pytest -q -m integration` | `run_checks` + CLI integration |
 | `uv run pytest -q` | Entire suite (includes optional skips) |
+| `uv run pytest -q -m mcp` | MCP tool helpers (`jaxlint[mcp]` required) |
 
 `jax`-dependent checks use `@pytest.mark.needs_jax` and importorskip—they are skipped unless JAX is installed (for example via `uv sync --extra hlo`).
 
-**Language server (`jaxlint[lsp]`)** — install with `uv sync --all-groups --extra lsp` (or `--extra lsp` alone). LSP-focused tests use **`@pytest.mark.lsp`** (see `tests/test_lsp_stdio.py`); CI also runs `tests/test_lsp_convert.py` and `tests/test_diagnostics_for_python_source.py` by path. Remaining **non-blocking** follow-ups for v1 are listed under **Open TODOs (LSP v1 reviewer nits)** in [Roadmap — November 2026 LSP sprint](roadmap.md#open-todos-lsp-v1-reviewer-nits).
+**Language server (`jaxlint[lsp]`)** — install with `uv sync --all-groups --extra lsp` (or `--extra lsp` alone). CI and local runs use **`uv run pytest -q -m lsp`** for all LSP-marked tests (convert helpers, in-memory runner parity, and stdio JSON-RPC integration). Remaining **non-blocking** follow-ups for v1 are listed under **Open TODOs (LSP v1 reviewer nits)** in [Roadmap — November 2026 LSP sprint](roadmap.md#open-todos-lsp-v1-reviewer-nits).
 
 ### HLO golden fixtures
 
@@ -90,4 +91,4 @@ Open `htmlcov/index.html` locally after the run completes to browse annotated so
 
 ## Continuous integration
 
-GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/jax-ml/jaxlint/blob/main/.github/workflows/ci.yml)) runs Ruff plus smoke tests on every PR, a dedicated **JAX / HLO** job that installs `jaxlint[hlo]` and runs `pytest -m needs_jax`, a Sphinx HTML + linkcheck job, plus (on pushes to `main`) the full pytest suite with coverage uploads from the main `lint-test` matrix.
+GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/jax-ml/jaxlint/blob/main/.github/workflows/ci.yml)) runs Ruff plus smoke tests on every PR, **`pytest -m lsp`** and **`pytest -m mcp`** (with the optional extras installed), a dedicated **JAX / HLO** job that installs `jaxlint[hlo]` and runs `pytest -m needs_jax`, a Sphinx HTML + linkcheck job, plus (on pushes to `main`) the full pytest suite with coverage uploads from the main `lint-test` matrix.

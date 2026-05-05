@@ -44,11 +44,11 @@ uv run pytest -q           # full suite
 uv run pytest -q --cov=jaxlint --cov-report=term-missing   # mirrors main-branch coverage step
 ```
 
-Markers include `smoke`, `unit`, `integration`, `slow`, and `needs_jax`. See [docs/contributing.md](docs/contributing.md) for workflow details, coverage commands, and CI expectations.
+Markers include `smoke`, `unit`, `integration`, `slow`, and `needs_jax`. **Optional `jaxlint[mcp]`** installs the MCP SDK; run **`jaxlint-mcp`** or **`python -m jaxlint.mcp`** (stdio) for agent-facing tools, and **`pytest -q -m mcp`** when developing them. See [docs/contributing.md](docs/contributing.md) for workflow details, coverage commands, and CI expectations.
 
 ## Roadmap
 
-The living plan (phased **near / medium / long-term**, plus what is already shipped) is **[docs/roadmap.md](docs/roadmap.md)**. **Release notes:** **[docs/changelog.md](docs/changelog.md)**. Highlights: **diagnostics-only LSP v1** ships as **`jaxlint[lsp]`** (see **[docs/lsp.md](docs/lsp.md)**); **MCP** remains a longer-horizon idea. Shipped / near-term work includes **SARIF** and **compact** CLI output, **autodoc** API pages, deeper **HLO** tests — CI already runs a **required** **`needs_jax`** job (`jax-hlo`). **`jaxlint check`** supports **`-j` / `--jobs`** and an optional **`--cache-dir`** disk cache (see [Roadmap](docs/roadmap.md)).
+The living plan (phased **near / medium / long-term**, plus what is already shipped) is **[docs/roadmap.md](docs/roadmap.md)**. **Release notes:** **[docs/changelog.md](docs/changelog.md)**. Highlights: **diagnostics-only LSP v1** ships as **`jaxlint[lsp]`** (see **[docs/lsp.md](docs/lsp.md)**); **MCP** preview ships as **`jaxlint[mcp]`** (`jaxlint-mcp`, **`pytest -m mcp`**). Shipped / near-term work includes **SARIF** and **compact** CLI output, **autodoc** API pages, deeper **HLO** tests — CI already runs a **required** **`needs_jax`** job (`jax-hlo`). **`jaxlint check`** supports **`-j` / `--jobs`** and an optional **`--cache-dir`** disk cache (see [Roadmap](docs/roadmap.md)).
 
 ## Configuration
 

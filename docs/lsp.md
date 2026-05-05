@@ -25,6 +25,7 @@ Wire your editor to launch one of the above with **stdio** transport. There is n
 |-------|--------|
 | **Diagnostics** | In-memory lint of the open buffer; results are published as LSP diagnostics. |
 | **Document sync** | **Full** text sync (`TextDocumentSyncKind.Full`). |
+| **`didClose`** | Publishes **empty diagnostics** for the closed URI so clients clear editor squiggles (same as non-Python / unsupported URIs). |
 | **URIs** | **`file://` only**; other schemes are ignored (empty diagnostics). |
 | **Configuration** | Resolved with **`load_config(path.parent)`** from the file path — same `[tool.jaxlint]` discovery as the CLI when the anchor is the file’s directory. |
 | **Disk cache** | **Not used.** The LSP path calls **`diagnostics_for_python_source`** with explicit source text and a **`LintConfig`**; there is no cache read/write in the server. |

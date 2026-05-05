@@ -9,6 +9,8 @@ import pytest
 from jaxlint.core.config import load_config
 from jaxlint.core.runner import diagnostics_for_python_source, run_checks
 
+pytestmark = [pytest.mark.lsp]
+
 
 @pytest.fixture
 def jd001_path(fixtures_dir: Path) -> Path:

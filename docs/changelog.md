@@ -6,8 +6,8 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 
 - **LSP (optional):** **`jaxlint[lsp]`** adds a **diagnostics-only** language server (**stdio**, **full** document sync, **`file://`** URIs only). Entrypoints: **`jaxlint-lsp`**, **`python -m jaxlint.lsp`**. Uses **`load_config(path.parent)`** and **`diagnostics_for_python_source`** (no disk cache in the server path). See [Language server](lsp.md).
 - **Library:** **`diagnostics_for_python_source`** on **`jaxlint.core`** for path + source string (sorted diagnostics; cache-free).
-- **CI:** PR **`lint-test`** syncs with **`--extra lsp`** and runs LSP-focused tests.
-- **Docs / roadmap:** LSP sprint notes (**`jaxlint-sprint-2026-11`**) table aligned with plan IDs (**L01–L06**); formal outcome review **APPROVE-with-nits** (2026-05-05, no blocking DoD gaps). **Open TODOs** for non-blocking LSP v1 nits: checklist in [Roadmap](roadmap.md) (November 2026 sprint).
+- **CI:** PR **`lint-test`** syncs with **`--extra lsp`** / **`--extra mcp`** and runs **`pytest -m lsp`** and **`pytest -m mcp`**.
+- **Docs / roadmap:** LSP sprint notes (**`jaxlint-sprint-2026-11`**) table aligned with plan IDs (**L01–L06**); formal outcome review **APPROVE-with-nits** (2026-05-05, no blocking DoD gaps). **Open TODOs** for non-blocking LSP v1 nits were closed in **0.2.2** (see [Roadmap](roadmap.md)).
 - **Performance / CLI:** Opt-in **disk cache** for **`jaxlint check`**: **`--cache-dir PATH`** and optional **`[tool.jaxlint] cache-dir`** (CLI wins when both are set). Cached entries are keyed by file identity (`mtime`/`size`), lint configuration fingerprint, and **`jaxlint` version**. Writes use atomic replace; POSIX uses **`flock`** on lock files next to cache blobs.
 - **CLI:** Invalid **`--jobs` / `-j`** values (for example **`-j 0`**) on **`jaxlint check`** now exit with code **2** and a clear message instead of an uncaught traceback.
 - **Docs:** Refreshed **`linkcheck_ignore`** rationale in `docs/conf.py` with **`curl -sI -L`** status evidence (2026-05-05); next scheduled review **2026-10-01** while RTD/GitHub URLs remain **404**.
@@ -15,6 +15,11 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 - **CI:** The **`jax-hlo`** workflow pins **`jax==0.10.0`** and **`jaxlib==0.10.0`** after `uv sync` so **`needs_jax`** runs stay reproducible.
 - **CLI:** `jaxlint check` and `jaxlint doc` accept **`--format rich`** (Rich table: severity, rule, location, message). Depends on explicit **`rich`** (see `pyproject.toml`).
 - **Docs:** Added this changelog (per [roadmap steering](roadmap.md)).
+
+## 0.2.2
+
+- **LSP:** Module-level **`pytest.mark.lsp`** on **`tests/test_lsp_convert.py`** and **`tests/test_diagnostics_for_python_source.py`**; PR CI runs **`uv run pytest -q -m lsp`**. Subprocess coverage for **`textDocument/didClose`** publishing **empty** diagnostics; **`docs/lsp.md`** documents the clear behaviour. **Contributing** documents the **`pytest -m lsp`** workflow. Roadmap **Open TODOs (LSP v1 reviewer nits)** checked off where satisfied (see [Roadmap](roadmap.md)).
+- **MCP (preview):** Optional **`jaxlint[mcp]`** installs the official **`mcp`** SDK. Console script **`jaxlint-mcp`** and **`python -m jaxlint.mcp`** run a **stdio** FastMCP server exposing **`jaxlint_check`** (paths or in-memory `source` + `virtual_path`), **`jaxlint_rules`**, and **`jaxlint_version`**. Tests: **`pytest -q -m mcp`** (CI **`lint-test`** syncs **`--extra lsp --extra mcp`**).
 
 ## 0.2.1
 
