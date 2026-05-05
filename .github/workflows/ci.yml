@@ -31,4 +31,31 @@ jobs:
 
       - name: Full suite + coverage (main branch pushes only)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: uv run pytest -q --cov=jaxlint --cov-report=term-missing
+        run: uv run pytest -q --cov=jaxlint --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage.xml
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml-py${{ matrix.python-version }}
+          path: coverage.xml
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync docs dependencies
+        run: uv sync --group docs
+
+      - name: Sphinx HTML (warnings are errors)
+        run: uv run sphinx-build -W -b html docs docs/_build/html
+
+      - name: Sphinx linkcheck
+        run: uv run sphinx-build -b linkcheck docs docs/_build/linkcheck
+
