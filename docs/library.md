@@ -9,6 +9,7 @@ from jaxlint.core import (
     Diagnostic,
     Severity,
     describe_rules,
+    diagnostics_for_python_source,
     format_compact,
     format_diagnostics,
     format_github_annotations_json,
@@ -45,6 +46,18 @@ diags = run_checks(paths, cfg=cfg, perf=True, doc=True, mathjx=True)
 - **`doc`:** Docstring sections (JD rules, plus style integration).
 - **`mathjx`:** MathJax diagnostics (JM rules) layered on docstring text.
 - **`config_start`:** Optional anchor for `load_config` when `cfg` is omitted.
+
+## In-memory diagnostics (`diagnostics_for_python_source`)
+
+For a **path** plus **source text** (for example an unsaved editor buffer), **`diagnostics_for_python_source`** returns the same **`list[Diagnostic]`** as **`run_checks`** would for that content: **sorted** by `Diagnostic.sort_key()`, and **no on-disk cache** — useful for tests, custom runners, and the optional **[language server](lsp.md)**.
+
+```python
+text = Path("example.py").read_text(encoding="utf-8")
+cfg = load_config(Path("example.py").parent)
+diags = diagnostics_for_python_source(Path("example.py"), text, cfg=cfg)
+```
+
+Optional flags match **`run_checks`**: **`perf`**, **`doc`**, **`mathjx`** (defaults mirror **`jaxlint check`**).
 
 Filter by severity in Python:
 

@@ -26,6 +26,16 @@ def load_parsed_python_file(path: Path) -> ParsedPythonFile:
         source = path.read_text(encoding="utf-8")
     except OSError:
         return ParsedPythonFile(path=path, source="", tree=None)
+    return parse_python_source(path, source)
+
+
+def parse_python_source(path: Path, source: str) -> ParsedPythonFile:
+    """Parse ``source`` as Python for ``path`` (no disk read).
+
+    On ``SyntaxError``, ``tree`` is ``None`` and ``source`` is preserved (same
+    contract as :func:`load_parsed_python_file` after a successful read).
+    """
+
     try:
         tree = ast.parse(source, filename=str(path))
     except SyntaxError:

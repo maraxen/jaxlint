@@ -33,9 +33,13 @@ docs = [
 hlo = [
     "jax>=0.4.30",
 ]
+lsp = [
+    "pygls>=2.0.0,<3",
+]
 
 [project.scripts]
 jaxlint = "jaxlint.cli.main:app"
+jaxlint-lsp = "jaxlint.lsp.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/jaxlint"]
@@ -52,6 +56,7 @@ markers = [
     "integration: run_checks(), Typer invocation, multi-subsystem flows",
     "slow: Heavier workloads (skipped in quick local runs)",
     "needs_jax: Requires jax / jaxlint[hlo] extras",
+    "lsp: Language server tests (requires jaxlint[lsp])",
 ]
 
 [dependency-groups]

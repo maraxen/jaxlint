@@ -19,6 +19,7 @@ HTML, PDF, and htmlzip builds are published via [Read the Docs](https://jaxlint.
 | [Rule catalogue](rules.md) | Rule IDs, severity, fixtures |
 | [API reference](api.md) | Generated reference for `jaxlint.core` |
 | [HLO extra](hlo.md) | Installing and importing `jaxlint.hlo` |
+| [Language server](lsp.md) | Optional **`jaxlint[lsp]`** diagnostics-only LSP (stdio) |
 | [Roadmap](roadmap.md) | Phased product and technical direction |
 | [Changelog](changelog.md) | Release notes and unreleased doc/test changes |
 | [Contributing](contributing.md) | Tests, coverage, CI markers |
@@ -36,6 +37,7 @@ library
 api
 rules
 hlo
+lsp
 roadmap
 changelog
 contributing

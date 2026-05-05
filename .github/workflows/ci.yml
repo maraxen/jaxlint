@@ -20,14 +20,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Sync (dev tooling)
-        run: uv sync --all-groups
+      - name: Sync (dev tooling + LSP extra)
+        run: uv sync --all-groups --extra lsp
 
       - name: Ruff
         run: uv run ruff check src tests
 
       - name: Smoke tests
         run: uv run pytest -q -m smoke
+
+      - name: LSP tests
+        run: uv run pytest -q tests/test_lsp_convert.py tests/test_lsp_stdio.py tests/test_diagnostics_for_python_source.py
 
       - name: Full suite + coverage (main branch pushes only)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'

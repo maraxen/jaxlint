@@ -17,9 +17,9 @@ from jaxlint.core.cache import store_diagnostics, try_load_diagnostics
 from jaxlint.core.config import LintConfig, load_config, rule_enabled
 from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.doc.mathjax import mathjax_diagnostics
-from jaxlint.core.doc.sections import doc_diagnostics_for_file, doc_diagnostics_from_source
-from jaxlint.core.parse_context import load_parsed_python_file
-from jaxlint.core.sensors import perf_diagnostics_for_file, perf_diagnostics_from_tree
+from jaxlint.core.doc.sections import doc_diagnostics_from_source
+from jaxlint.core.parse_context import ParsedPythonFile, load_parsed_python_file, parse_python_source
+from jaxlint.core.sensors import perf_diagnostics_from_tree
 
 SARIF_SCHEMA_URI = (
     "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
@@ -267,19 +267,21 @@ def _cached_diagnostics_for_file(
     return out
 
 
-def _diagnostics_for_file(
+def _diagnostics_from_parsed(
     py: Path,
     cfg: LintConfig,
+    ctx: ParsedPythonFile,
     *,
     perf: bool,
     doc: bool,
     mathjx: bool,
 ) -> list[Diagnostic]:
+    """Shared per-file logic for a :class:`ParsedPythonFile` (disk or in-memory)."""
+
     out: list[Diagnostic] = []
     want_doc = doc or mathjx
 
     if perf and want_doc:
-        ctx = load_parsed_python_file(py)
         if ctx.tree is None:
             return []
         for d in perf_diagnostics_from_tree(py, cfg, ctx.tree):
@@ -293,13 +295,59 @@ def _diagnostics_for_file(
         return out
 
     if perf:
-        for d in perf_diagnostics_for_file(py, cfg):
+        if ctx.tree is None:
+            return []
+        for d in perf_diagnostics_from_tree(py, cfg, ctx.tree):
             if rule_enabled(d.rule_id, cfg, py):
                 out.append(d)
     if want_doc:
-        for d in doc_diagnostics_for_file(py, cfg, sections=doc, mathjax=mathjx):
+        if ctx.tree is None:
+            return []
+        for d in doc_diagnostics_from_source(
+            py, cfg, ctx.source, ctx.tree, sections=doc, mathjax=mathjx
+        ):
             if rule_enabled(d.rule_id, cfg, py):
                 out.append(d)
+    return out
+
+
+def _diagnostics_for_file(
+    py: Path,
+    cfg: LintConfig,
+    *,
+    perf: bool,
+    doc: bool,
+    mathjx: bool,
+) -> list[Diagnostic]:
+    ctx = load_parsed_python_file(py)
+    return _diagnostics_from_parsed(py, cfg, ctx, perf=perf, doc=doc, mathjx=mathjx)
+
+
+def diagnostics_for_python_source(
+    path: Path,
+    source: str,
+    *,
+    cfg: LintConfig | None = None,
+    perf: bool = True,
+    doc: bool = True,
+    mathjx: bool = True,
+    config_start: Path | None = None,
+) -> list[Diagnostic]:
+    """Lint in-memory Python source for ``path`` (unsaved buffers, LSP, etc.).
+
+    Semantics match :func:`_diagnostics_for_file` for the same ``path``, flags,
+    and config, but ``source`` is used instead of reading the file from disk.
+    Results are sorted by :meth:`Diagnostic.sort_key` (same contract as
+    :func:`run_checks` for a single path).
+
+    The language server does **not** use the on-disk diagnostic cache
+    (``cache_dir``); callers should omit caching for editor buffers.
+    """
+
+    cfg = cfg if cfg is not None else load_config(config_start)
+    ctx = parse_python_source(path, source)
+    out = _diagnostics_from_parsed(path, cfg, ctx, perf=perf, doc=doc, mathjx=mathjx)
+    out.sort(key=lambda d: d.sort_key())
     return out
 
 

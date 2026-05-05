@@ -3,6 +3,7 @@
 from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.rules import RULES, describe_rules
 from jaxlint.core.runner import (
+    diagnostics_for_python_source,
     format_compact,
     format_diagnostics,
     format_github_annotations_json,
@@ -21,6 +22,7 @@ __all__ = [
     "describe_rules",
     "resolve_paths",
     "run_checks",
+    "diagnostics_for_python_source",
     "format_compact",
     "format_text",
     "format_json",

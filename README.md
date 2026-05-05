@@ -33,6 +33,8 @@ Published builds (**HTML**, **PDF**, **htmlzip** per version):
 - `jaxlint init` — print a starter `[tool.jaxlint]` block
 - `jaxlint hlo` — hints for optional `jaxlint.hlo` (requires `--extra hlo`)
 
+**Language server:** install **`jaxlint[lsp]`**, then run **`jaxlint-lsp`** or **`python -m jaxlint.lsp`** (stdio; diagnostics-only v1). See **[docs/lsp.md](docs/lsp.md)**.
+
 ## Testing
 
 ```bash
@@ -46,7 +48,7 @@ Markers include `smoke`, `unit`, `integration`, `slow`, and `needs_jax`. See [do
 
 ## Roadmap
 
-The living plan (phased **near / medium / long-term**, plus what is already shipped) is **[docs/roadmap.md](docs/roadmap.md)**. **Release notes:** **[docs/changelog.md](docs/changelog.md)**. Highlights: **LSP** and **MCP** remain planned integrations; shipped / near-term work includes **SARIF** and **compact** CLI output, **autodoc** API pages, deeper **HLO** tests — CI already runs a **required** **`needs_jax`** job (`jax-hlo`). **`jaxlint check`** supports **`-j` / `--jobs`** and an optional **`--cache-dir`** disk cache (see [Roadmap](docs/roadmap.md)).
+The living plan (phased **near / medium / long-term**, plus what is already shipped) is **[docs/roadmap.md](docs/roadmap.md)**. **Release notes:** **[docs/changelog.md](docs/changelog.md)**. Highlights: **diagnostics-only LSP v1** ships as **`jaxlint[lsp]`** (see **[docs/lsp.md](docs/lsp.md)**); **MCP** remains a longer-horizon idea. Shipped / near-term work includes **SARIF** and **compact** CLI output, **autodoc** API pages, deeper **HLO** tests — CI already runs a **required** **`needs_jax`** job (`jax-hlo`). **`jaxlint check`** supports **`-j` / `--jobs`** and an optional **`--cache-dir`** disk cache (see [Roadmap](docs/roadmap.md)).
 
 ## Configuration
 
