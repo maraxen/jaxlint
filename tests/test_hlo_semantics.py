@@ -110,6 +110,54 @@ def test_graph_audit_exported_while_violation_fake() -> None:
 
 @pytest.mark.unit
 @pytest.mark.needs_jax
+def test_semantic_analyzer_inventory_golden_add_constants_fake_export() -> None:
+    """Golden MLIR: constants + ``stablehlo.add`` — inventory / ``get_operations`` (no ``audit_exported``)."""
+
+    mlir_text = (_HLO_FIXTURES / "add_constant_kernel.mlir").read_text(encoding="utf-8")
+
+    class FakeExported:
+        def mlir_module(self) -> str:
+            return mlir_text
+
+        in_avals = ()
+        out_avals = ()
+
+    analyzer = SemanticAnalyzer(FakeExported())  # type: ignore[arg-type]
+    inv = analyzer.get_operation_inventory()
+    assert inv.get("stablehlo.constant", 0) >= 2
+    assert inv.get("stablehlo.add", 0) >= 1
+    full_names = {op.full_name for op in analyzer.get_operations()}
+    assert {"stablehlo.constant", "stablehlo.add"}.issubset(full_names)
+    summary = analyzer.get_summary()
+    assert summary["operation_count"] >= 3
+
+
+@pytest.mark.unit
+@pytest.mark.needs_jax
+def test_semantic_analyzer_inventory_golden_multiply_reshape_fake_export() -> None:
+    """Golden MLIR: ``stablehlo.multiply`` + ``stablehlo.reshape`` + constants — distinct inventory path."""
+
+    mlir_text = (_HLO_FIXTURES / "multiply_reshape_kernel.mlir").read_text(encoding="utf-8")
+
+    class FakeExported:
+        def mlir_module(self) -> str:
+            return mlir_text
+
+        in_avals = ()
+        out_avals = ()
+
+    analyzer = SemanticAnalyzer(FakeExported())  # type: ignore[arg-type]
+    inv = analyzer.get_operation_inventory()
+    assert inv.get("stablehlo.multiply", 0) >= 1
+    assert inv.get("stablehlo.reshape", 0) >= 1
+    assert inv.get("stablehlo.constant", 0) >= 2
+    full_names = {op.full_name for op in analyzer.get_operations()}
+    assert "stablehlo.multiply" in full_names
+    assert "stablehlo.reshape" in full_names
+
+
+@pytest.mark.unit
+@pytest.mark.needs_jax
 def test_semantic_analyzer_get_operations_add_kernel() -> None:
     @jax.jit
     def f(x):

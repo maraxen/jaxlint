@@ -4,10 +4,11 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 
 ## Unreleased
 
+- **Docs:** Refreshed **`linkcheck_ignore`** rationale in `docs/conf.py` with **`curl -sI -L`** status evidence (2026-05-05); next scheduled review **2026-10-01** while RTD/GitHub URLs remain **404**.
+- **Testing:** Golden StableHLO under [`tests/fixtures/hlo/`](https://github.com/jax-ml/jaxlint/tree/main/tests/fixtures/hlo): outfeed / **`stablehlo.while`** **`audit_exported`** paths, plus **`add_constant_kernel`** / **`multiply_reshape_kernel`** inventory goldens (duck-typed fake exports; **`needs_jax`**). Merge-blocking **jax-hlo** CI installs **`jaxlint[hlo]`** and JAX.
 - **CI:** The **`jax-hlo`** workflow pins **`jax==0.10.0`** and **`jaxlib==0.10.0`** after `uv sync` so **`needs_jax`** runs stay reproducible.
 - **CLI:** `jaxlint check` and `jaxlint doc` accept **`--format rich`** (Rich table: severity, rule, location, message). Depends on explicit **`rich`** (see `pyproject.toml`).
 - **Docs:** Added this changelog (per [roadmap steering](roadmap.md)).
-- **Testing:** Golden StableHLO snippets live under [`tests/fixtures/hlo/`](https://github.com/jax-ml/jaxlint/tree/main/tests/fixtures/hlo) for selected `needs_jax` tests (outfeed and **`stablehlo.while`** `audit_exported` paths). The merge-blocking **jax-hlo** CI job still installs **`jaxlint[hlo]`** and JAX; golden text reduces dependence on live `jax.export` output shapes for those cases.
 
 ## 0.2.0
 

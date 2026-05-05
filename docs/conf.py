@@ -50,8 +50,11 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
 }
 
-# RTD project URL and org repo root: verified with `curl -sI` (May 2026) — both return 404
-# until the project is published under those exact URLs. Linkcheck would fail without ignores.
+# RTD project URL and org repo root — linkcheck ignores (branch ii: keep while not stable 200).
+# Verified 2026-05-05 with `curl -sI -L`:
+#   https://jaxlint.readthedocs.io/  → HTTP/2 404 (Proxito-404; project not published at URL).
+#   https://github.com/jax-ml/jaxlint → HTTP/2 404 (repo missing or private at path).
+# Next review: remove ignores when both return stable 200 (target: 2026-10-01).
 linkcheck_ignore = [
     r"^https://jaxlint\.readthedocs\.io",
     r"^https://github\.com/jax-ml/jaxlint",
