@@ -4,10 +4,10 @@
 
 ```bash
 cd /path/to/jaxlint
-uv sync --all-groups
+uv sync --all-groups --extra docs
 ```
 
-Development dependencies live in `[dependency-groups] dev`. Sphinx / Read the Docs tooling uses `[dependency-groups] docs`.
+Development dependencies live in `[dependency-groups] dev`. Sphinx / Read the Docs tooling uses the **`docs`** optional extra (`[project.optional-dependencies]` in `pyproject.toml`).
 
 ## Linting
 
@@ -28,12 +28,12 @@ uv run ruff check src tests
 
 ## Documentation (Sphinx + Read the Docs)
 
-Jaxlint tracks upstream JAX’s docs stack at a lighter weight: **Sphinx**, **MyST** (`myst-parser`), **`sphinx-book-theme`**, pinned in [`requirements.txt`](requirements.txt) (mirrored by `[dependency-groups] docs` in [`pyproject.toml`](https://github.com/jax-ml/jaxlint/blob/main/pyproject.toml)).
+Jaxlint tracks upstream JAX’s docs stack at a lighter weight: **Sphinx**, **MyST** (`myst-parser`), **`sphinx-book-theme`**, pinned in the **`docs`** optional extra of [`pyproject.toml`](../pyproject.toml).
 
 Local HTML:
 
 ```bash
-uv sync --group docs
+uv sync --extra docs
 uv run sphinx-build -W -b html docs docs/_build/html
 ```
 

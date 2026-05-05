@@ -413,6 +413,12 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+docs = [
+    { name = "myst-parser" },
+    { name = "sphinx" },
+    { name = "sphinx-book-theme" },
+    { name = "sphinx-copybutton" },
+]
 hlo = [
     { name = "jax" },
 ]
@@ -423,32 +429,24 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
 ]
-docs = [
-    { name = "myst-parser" },
-    { name = "sphinx" },
-    { name = "sphinx-book-theme" },
-    { name = "sphinx-copybutton" },
-]
 
 [package.metadata]
 requires-dist = [
     { name = "griffe", specifier = ">=2.0.2" },
     { name = "jax", marker = "extra == 'hlo'", specifier = ">=0.4.30" },
+    { name = "myst-parser", marker = "extra == 'docs'", specifier = "==4.0.1" },
+    { name = "sphinx", marker = "extra == 'docs'", specifier = "==8.2.3" },
+    { name = "sphinx-book-theme", marker = "extra == 'docs'", specifier = "==1.1.4" },
+    { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = "==0.5.2" },
     { name = "typer", specifier = ">=0.12.0" },
 ]
-provides-extras = ["hlo"]
+provides-extras = ["docs", "hlo"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "ruff", specifier = ">=0.8.0" },
-]
-docs = [
-    { name = "myst-parser", specifier = "==4.0.1" },
-    { name = "sphinx", specifier = "==8.2.3" },
-    { name = "sphinx-book-theme", specifier = "==1.1.4" },
-    { name = "sphinx-copybutton", specifier = "==0.5.2" },
 ]
 
 [[package]]

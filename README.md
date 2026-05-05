@@ -36,7 +36,7 @@ Published builds (**HTML**, **PDF**, **htmlzip** per version):
 ## Testing
 
 ```bash
-uv sync --all-groups
+uv sync --all-groups --extra docs
 uv run pytest -q -m smoke   # CI fast path
 uv run pytest -q           # full suite
 uv run pytest -q --cov=jaxlint --cov-report=term-missing   # mirrors main-branch coverage step
