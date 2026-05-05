@@ -18,6 +18,7 @@ HTML, PDF, and htmlzip builds are published via [Read the Docs](https://jaxlint.
 | [Library usage](library.md) | `run_checks`, diagnostics, formatting |
 | [Rule catalogue](rules.md) | Rule IDs, severity, fixtures |
 | [HLO extra](hlo.md) | Installing and importing `jaxlint.hlo` |
+| [Roadmap](roadmap.md) | Phased product and technical direction |
 | [Contributing](contributing.md) | Tests, coverage, CI markers |
 
 Start from the [project README](https://github.com/jax-ml/jaxlint/blob/main/README.md) (install and CLI quick start). If the repository URL changes, update links in this page and in `docs/conf.py`.
@@ -32,5 +33,6 @@ configuration
 library
 rules
 hlo
+roadmap
 contributing
 ```

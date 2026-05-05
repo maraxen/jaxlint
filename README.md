@@ -46,8 +46,7 @@ Markers include `smoke`, `unit`, `integration`, `slow`, and `needs_jax`. See [do
 
 ## Roadmap
 
-- **LSP**: not bundled; planned as a thin editor integration over `jaxlint.core` diagnostics.
-- **MCP**: no MCP server in this repository; could wrap the same API separately if useful.
+The living plan (phased **near / medium / long-term**, plus what is already shipped) is **[docs/roadmap.md](docs/roadmap.md)**. Highlights: **LSP** and **MCP** remain planned integrations; nearer work includes richer **CLI output**, **optional JAX CI**, **autodoc**, and harder **HLO** tests.
 
 ## Configuration
 
