@@ -13,7 +13,7 @@ import typer
 from jaxlint import __version__
 from jaxlint.core.config import load_config, starter_toml_snippet
 from jaxlint.core.rules import describe_rules
-from jaxlint.core.runner import format_json, format_text, resolve_paths, run_checks
+from jaxlint.core.runner import format_diagnostics, resolve_paths, run_checks
 from jaxlint.core.doc.rubric_impl import RubricScorer
 
 app = typer.Typer(help="JAX-oriented linting and doc quality", no_args_is_help=True)
@@ -24,7 +24,12 @@ def check_cmd(
     paths: list[Path] = typer.Argument(default=None, help="Files or directories (.py)"),
     no_doc: bool = typer.Option(False, "--no-doc", help="Skip docstring / MathJax checks"),
     no_perf: bool = typer.Option(False, "--no-perf", help="Skip performance AST sensors"),
-    format_: str = typer.Option("text", "--format", "-f", help="text or json"),
+    format_: str = typer.Option(
+        "text",
+        "--format",
+        "-f",
+        help="text, json, or github (GitHub Checks-style JSON)",
+    ),
     config: Path | None = typer.Option(None, "--config", help="Starting path for pyproject.toml search"),
     select: str | None = typer.Option(None, "--select", help="Comma-separated rule prefixes (override config)"),
     ignore: str | None = typer.Option(None, "--ignore", help="Comma-separated rule prefixes to ignore"),
@@ -45,14 +50,23 @@ def check_cmd(
         mathjx=not no_doc,
         config_start=start,
     )
-    typer.echo(format_json(diags) if format_ == "json" else format_text(diags))
+    try:
+        typer.echo(format_diagnostics(diags, format_))
+    except ValueError as e:
+        typer.echo(str(e), err=True)
+        raise typer.Exit(2) from e
     raise typer.Exit(1 if any(d.severity.value == "error" for d in diags) else 0)
 
 
 @app.command("doc")
 def doc_cmd(
     paths: list[Path] = typer.Argument(default=None),
-    format_: str = typer.Option("text", "--format", "-f"),
+    format_: str = typer.Option(
+        "text",
+        "--format",
+        "-f",
+        help="text, json, or github (GitHub Checks-style JSON)",
+    ),
     config: Path | None = typer.Option(None, "--config"),
     select: str | None = typer.Option(None, "--select"),
     ignore: str | None = typer.Option(None, "--ignore"),
@@ -66,7 +80,11 @@ def doc_cmd(
     if ignore:
         cfg = replace(cfg, ignore=frozenset(s.strip() for s in ignore.split(",") if s.strip()))
     diags = run_checks(paths, cfg=cfg, perf=False, doc=True, mathjx=True, config_start=start)
-    typer.echo(format_json(diags) if format_ == "json" else format_text(diags))
+    try:
+        typer.echo(format_diagnostics(diags, format_))
+    except ValueError as e:
+        typer.echo(str(e), err=True)
+        raise typer.Exit(2) from e
     raise typer.Exit(1 if any(d.severity.value == "error" for d in diags) else 0)
 
 

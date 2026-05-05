@@ -75,6 +75,24 @@ def test_cli_doc_json_format(clean_fixture: Path) -> None:
 
 
 @pytest.mark.integration
+def test_cli_check_github_format(fixtures_dir: Path) -> None:
+    p = fixtures_dir / "jl001_scatter_gather.py"
+    r = runner.invoke(app, ["check", "--no-doc", "--format", "github", str(p)])
+    assert r.exit_code == 1
+    payload = json.loads(r.output)
+    assert "annotations" in payload
+    assert any(a.get("title") == "JL001" for a in payload["annotations"])
+    assert all("annotation_level" in a for a in payload["annotations"])
+
+
+@pytest.mark.integration
+def test_cli_check_unknown_format_exits_2(clean_fixture: Path) -> None:
+    r = runner.invoke(app, ["check", "--no-doc", "--format", "sarif", str(clean_fixture)])
+    assert r.exit_code == 2
+    assert "Unknown --format" in r.output
+
+
+@pytest.mark.integration
 def test_cli_score_jsonl_and_baseline(tmp_path: Path) -> None:
     current = tmp_path / "current.jsonl"
     baseline_file = tmp_path / "baseline.jsonl"

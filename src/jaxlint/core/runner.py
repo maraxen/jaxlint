@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from jaxlint.core.config import LintConfig, load_config, rule_enabled
-from jaxlint.core.diagnostic import Diagnostic
+from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.doc.mathjax import mathjax_diagnostics
 from jaxlint.core.doc.sections import doc_diagnostics_for_file
 from jaxlint.core.sensors import perf_diagnostics_for_file
@@ -46,6 +46,55 @@ def format_json(diagnostics: list[Diagnostic]) -> str:
         for d in sorted(diagnostics, key=lambda x: x.sort_key())
     ]
     return json.dumps(payload, indent=2)
+
+
+def format_github_annotations_json(diagnostics: list[Diagnostic]) -> str:
+    """JSON shaped for GitHub Checks `output.annotations` (REST API field names).
+
+    Omits ``start_column`` / ``end_column`` when ``start_line != end_line`` (GitHub
+    requires columns only for single-line annotations). Uses 1-based ``start_column``
+    / ``end_column``; ``col`` / ``end_col`` of ``0`` are treated as start of line (column 1).
+    """
+
+    def annotation_level(sev: Severity) -> str:
+        if sev == Severity.ERROR:
+            return "failure"
+        if sev == Severity.WARNING:
+            return "warning"
+        return "notice"
+
+    def one_based_col(c: int) -> int:
+        return 1 if c <= 0 else c
+
+    annotations: list[dict] = []
+    for d in sorted(diagnostics, key=lambda x: x.sort_key()):
+        end_line = d.end_line if d.end_line is not None else d.line
+        row: dict = {
+            "path": str(d.path),
+            "start_line": d.line,
+            "end_line": end_line,
+            "annotation_level": annotation_level(d.severity),
+            "message": d.message,
+            "title": d.rule_id,
+        }
+        if end_line == d.line:
+            row["start_column"] = one_based_col(d.col)
+            if d.end_col is not None:
+                row["end_column"] = one_based_col(d.end_col)
+        annotations.append(row)
+    return json.dumps({"annotations": annotations}, indent=2)
+
+
+def format_diagnostics(diagnostics: list[Diagnostic], format_name: str) -> str:
+    fmt = format_name.strip().lower()
+    if fmt == "text":
+        return format_text(diagnostics)
+    if fmt == "json":
+        return format_json(diagnostics)
+    if fmt in ("github", "github-annotations"):
+        return format_github_annotations_json(diagnostics)
+    msg = f"Unknown --format {format_name!r} (expected text, json, or github)"
+    raise ValueError(msg)
 
 
 def run_checks(
