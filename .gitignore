@@ -12,7 +12,9 @@ wheels/
 
 .coverage
 .coverage.*
+coverage.xml
 htmlcov/
+docs/_build/
 .cache/
 pytest_cache/
 .mypy_cache/

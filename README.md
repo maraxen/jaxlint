@@ -17,6 +17,13 @@ Optional HLO / export analysis:
 uv sync --extra hlo
 ```
 
+## Documentation
+
+Published builds (**HTML**, **PDF**, **htmlzip** per version):
+
+- **[Read the Docs](https://jaxlint.readthedocs.io/)** — import this repository using [`.readthedocs.yml`](.readthedocs.yml); the canonical URL assumes project slug **`jaxlint`**. Pull-request previews are **HTML-only**; PDF/htmlzip artifacts appear on **`latest`/tag/version** builds ([RTD `formats`](https://docs.readthedocs.io/en/stable/config-file/v2.html)).
+- **Markdown sources:** [docs/index.md](docs/index.md) (notebook-free Sphinx + MyST stack, aligned with JAX’s docs toolchain at smaller scope).
+
 ## CLI
 
 - `jaxlint check [PATHS]...` — performance sensors (AST) plus doc section and MathJax checks by default
@@ -35,7 +42,7 @@ uv run pytest -q           # full suite
 uv run pytest -q --cov=jaxlint --cov-report=term-missing   # mirrors main-branch coverage step
 ```
 
-Markers include `smoke`, `unit`, `integration`, `slow`, and `needs_jax`.
+Markers include `smoke`, `unit`, `integration`, `slow`, and `needs_jax`. See [docs/contributing.md](docs/contributing.md) for workflow details, coverage commands, and CI expectations.
 
 ## Roadmap
 
