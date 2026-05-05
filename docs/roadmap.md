@@ -68,7 +68,15 @@ Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, 
 | **L04** | **`jaxlint.lsp`**: stdio server, **Full** sync, **`file://`** only, **`didOpen`/`didChange`/`didClose`**, **`asyncio.to_thread`**; **`load_config(path.parent)`** (no CLI **`--select`** overrides) | **Shipped** |
 | **L05** | Subprocess JSON-RPC tests (**`publishDiagnostics`** on open/change); **`lsp`** + **`integration`** markers | **Shipped** |
 | **L06** | CI (**`uv sync --extra lsp`** + focused pytest on PRs), **`docs/lsp.md`**, changelog, library/README pointers | **Shipped** |
-| **Review** | Outcome audit (**2026-05-05**): **APPROVE-with-nits** — no blocking gaps vs DoD; optional follow-ups: **`didClose`** integration test, **`pytest -m lsp`** coverage of convert tests, **`contributing.md`** LSP blurb | **Recorded** |
+| **Review** | Outcome audit (**2026-05-05**): **APPROVE-with-nits** — no blocking gaps vs DoD; follow-ups tracked below | **Recorded** |
+
+### Open TODOs (LSP v1 reviewer nits)
+
+Non-blocking polish from the outcome review; not duplicated as GitHub issues in-repo.
+
+- [ ] **LSP tests:** add subprocess/integration coverage that **`textDocument/didClose`** triggers **`publishDiagnostics`** with an **empty** list (today only open/change are asserted).
+- [ ] **Markers:** either add **`@pytest.mark.lsp`** to **`tests/test_lsp_convert.py`** so **`pytest -m lsp`** runs convert + stdio suites, **or** document in **`docs/contributing.md`** that CI names those files explicitly and **`lsp`** is stdio-focused.
+- [ ] **Contributing docs:** add a short **Language server (`jaxlint[lsp]`)** subsection under [Contributing](contributing.md) (`uv sync --extra lsp`, suggested pytest invocations, marker meaning).
 
 ## Current sprint notes (May 2026 — Disk cache / P09)
 
