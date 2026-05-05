@@ -61,7 +61,7 @@ Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, 
 | Deliverable | Status |
 |-------------|--------|
 | **`--format rich`** for `check` / `doc` (`format_rich`, tests, CLI docs) | **Landed** |
-| Trim `linkcheck_ignore` after manual URL verification | **Backlog** (one URL at a time) |
-| Optional: pin JAX in `jax-hlo` CI to stabilize golden text | **Spike** — open for discussion |
+| Trim `linkcheck_ignore` after manual URL verification | **Partial** — `curl -sI` (May 2026): `https://jaxlint.readthedocs.io/` and `https://github.com/jax-ml/jaxlint` both return **404**; ignores kept in `docs/conf.py` with a short comment until those endpoints serve 200. |
+| Pin JAX in `jax-hlo` CI to stabilize golden text | **Done** — pins **`jax==0.10.0`** / **`jaxlib==0.10.0`** after `uv sync --all-groups --extra hlo`. |
 
 **Previous sprint (May 2026):** Golden StableHLO fixtures + `needs_jax` wiring, changelog + docs index, roadmap / packaging version narrative (see shipped baseline and [Changelog](changelog.md)).

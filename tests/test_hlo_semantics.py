@@ -87,6 +87,29 @@ def test_graph_audit_exported_outfeed_violation_fake() -> None:
 
 @pytest.mark.unit
 @pytest.mark.needs_jax
+def test_graph_audit_exported_while_violation_fake() -> None:
+    """Golden MLIR: ``stablehlo.while`` in text → inventory + ``audit_exported`` while violation (no live export)."""
+
+    mlir_text = (_HLO_FIXTURES / "while_loop_detected.mlir").read_text(encoding="utf-8")
+    assert "stablehlo.while" in mlir_text
+
+    class FakeExported:
+        def mlir_module(self) -> str:
+            return mlir_text
+
+        in_avals = ()
+        out_avals = ()
+
+    r = GraphAuditSensor.audit_exported(FakeExported())  # type: ignore[arg-type]
+    assert r["success"] is False
+    assert len(r["violations"]) == 1
+    msg = "Implicit 'while' loop detected in StableHLO; prefer jax.lax.scan."
+    assert r["violations"] == [msg]
+    assert r["operation_counts"].get("stablehlo.while", 0) >= 1
+
+
+@pytest.mark.unit
+@pytest.mark.needs_jax
 def test_semantic_analyzer_get_operations_add_kernel() -> None:
     @jax.jit
     def f(x):

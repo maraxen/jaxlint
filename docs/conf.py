@@ -50,8 +50,8 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
 }
 
-# Read the Docs + jax-ml org URLs: ignored for linkcheck until those endpoints are
-# reliably reachable (404/rate-limit otherwise). Prefer tightening this list over time.
+# RTD project URL and org repo root: verified with `curl -sI` (May 2026) — both return 404
+# until the project is published under those exact URLs. Linkcheck would fail without ignores.
 linkcheck_ignore = [
     r"^https://jaxlint\.readthedocs\.io",
     r"^https://github\.com/jax-ml/jaxlint",

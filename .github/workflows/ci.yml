@@ -57,6 +57,10 @@ jobs:
       - name: Sync with dev tooling and HLO extra
         run: uv sync --all-groups --extra hlo
 
+      # Pin jax/jaxlib so needs_jax golden expectations and export output stay reproducible across resolver drift.
+      - name: Pin JAX stack for CI
+        run: uv pip install 'jax==0.10.0' 'jaxlib==0.10.0'
+
       - name: pytest (needs_jax only)
         run: uv run pytest -q -m needs_jax
 
