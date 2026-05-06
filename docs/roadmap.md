@@ -73,6 +73,22 @@ Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, 
 
 **Outcome review:** **APPROVE** (after remediation: cache fingerprint regression test for severity-only override delta).
 
+## Current sprint notes (May 2026 — Native `jaxlint.toml` manifest)
+
+**Theme:** First-class **`[jaxlint]`** table in **`jaxlint.toml`** with legacy **`[tool.jaxlint]`** compatibility (same file), **`pyproject.toml`** unchanged (**`[tool.jaxlint]`** only).
+
+**task_id:** `jaxlint-sprint-2026-05-05`
+
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| **JX1** | **`_resolve_lint_raw_table`** / **`_lint_config_from_raw`** — native vs legacy extraction | **Shipped** |
+| **JX2** | Mutual exclusion (**`[jaxlint]`** + **`[tool.jaxlint]`** in one **`jaxlint.toml`**) + reject **`[jaxlint]`** in **`pyproject.toml`** | **Shipped** |
+| **JX3** | **`starter_toml_snippet`** / **`jaxlint init`** recommend **`[jaxlint]`** | **Shipped** |
+| **JX4** | Cache fingerprint equivalence (**`[jaxlint]`** vs legacy bytes → same **`LintConfig`**) | **Shipped** |
+| **JX5** | Docs + changelog **0.3.1** | **Shipped** |
+
+**Outcome review:** **APPROVE-with-nits** (full **`pytest`** + **`ruff`** verified locally).
+
 ## Current sprint notes (May 2026 — Agent-grade MCP v1 / “nascency”)
 
 **Theme:** **Structured MCP responses**, **`run_checks`** passthrough options from agents, and a **`jaxlint_capabilities`** introspection tool — backward compatible by default.
