@@ -1,6 +1,6 @@
 # Changelog
 
-Notable changes to jaxlint are listed here. Versions match the `version` field in [`pyproject.toml`](https://github.com/jax-ml/jaxlint/blob/main/pyproject.toml) at release time.
+Notable changes to jaxlint are listed here. Versions match the `version` field in [`pyproject.toml`](https://github.com/maraxen/jaxlint/blob/main/pyproject.toml) at release time.
 
 ## 0.4.1
 
@@ -26,7 +26,7 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 - **Performance / CLI:** Opt-in **disk cache** for **`jaxlint check`**: **`--cache-dir PATH`** and optional **`[tool.jaxlint] cache-dir`** (CLI wins when both are set). Cached entries are keyed by file identity (`mtime`/`size`), lint configuration fingerprint, and **`jaxlint` version**. Writes use atomic replace; POSIX uses **`flock`** on lock files next to cache blobs.
 - **CLI:** Invalid **`--jobs` / `-j`** values (for example **`-j 0`**) on **`jaxlint check`** now exit with code **2** and a clear message instead of an uncaught traceback.
 - **Docs:** Roadmap **Canonical hosted URLs** table plus refreshed **`linkcheck_ignore`** comments in `docs/conf.py` (**`curl -sI -L`**, **2026-05-06**); canonical RTD/GitHub URLs still **404**; next review **2026-10-01**.
-- **Testing:** Golden StableHLO under [`tests/fixtures/hlo/`](https://github.com/jax-ml/jaxlint/tree/main/tests/fixtures/hlo): outfeed / **`stablehlo.while`** **`audit_exported`** paths, plus **`add_constant_kernel`** / **`multiply_reshape_kernel`** inventory goldens (duck-typed fake exports; **`needs_jax`**). Merge-blocking **jax-hlo** CI installs **`jaxlint[hlo]`** and JAX.
+- **Testing:** Golden StableHLO under [`tests/fixtures/hlo/`](https://github.com/maraxen/jaxlint/tree/main/tests/fixtures/hlo): outfeed / **`stablehlo.while`** **`audit_exported`** paths, plus **`add_constant_kernel`** / **`multiply_reshape_kernel`** inventory goldens (duck-typed fake exports; **`needs_jax`**). Merge-blocking **jax-hlo** CI installs **`jaxlint[hlo]`** and JAX.
 - **CI:** On **pull requests**, the **`docs`** job runs only when **`docs/**`**, **`.readthedocs.yml`**, or **`README.md`** change; **`main`** / **`master`** pushes always run it (see workflow header comment for frozen globs).
 - **CI:** The **`jax-hlo`** workflow pins **`jax==0.10.0`** and **`jaxlib==0.10.0`** after `uv sync` so **`needs_jax`** runs stay reproducible.
 - **CLI:** `jaxlint check` and `jaxlint doc` accept **`--format rich`** (Rich table: severity, rule, location, message). Depends on explicit **`rich`** (see `pyproject.toml`).

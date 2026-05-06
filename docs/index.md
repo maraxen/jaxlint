@@ -25,7 +25,7 @@ HTML, PDF, and htmlzip builds are published via [Read the Docs](https://jaxlint.
 | [Changelog](changelog.md) | Release notes and unreleased doc/test changes |
 | [Contributing](contributing.md) | Tests, coverage, CI markers |
 
-Start from the [project README](https://github.com/jax-ml/jaxlint/blob/main/README.md) (install and CLI quick start). If the repository URL changes, update links in this page and in `docs/conf.py`.
+Start from the [project README](https://github.com/maraxen/jaxlint/blob/main/README.md) (install and CLI quick start). If the repository URL changes, update links in this page and in `docs/conf.py`.
 
 ```{toctree}
 :hidden:

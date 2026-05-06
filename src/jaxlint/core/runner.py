@@ -213,7 +213,7 @@ def format_sarif(
     driver: dict = {
         "name": "jaxlint",
         "version": tool_version,
-        "informationUri": "https://github.com/jax-ml/jaxlint",
+        "informationUri": "https://github.com/maraxen/jaxlint",
     }
     if rules:
         driver["rules"] = rules

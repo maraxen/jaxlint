@@ -55,7 +55,7 @@ uv sync --extra docs
 uv run sphinx-build -W -b html docs docs/_build/html
 ```
 
-Link validation (see [`linkcheck_ignore` in `docs/conf.py`](conf.py); ignores cover the canonical Read the Docs and `jax-ml/jaxlint` GitHub URLs until linkcheck can verify them reliably):
+Link validation (see [`linkcheck_ignore` in `docs/conf.py`](conf.py); ignores cover the canonical Read the Docs and `maraxen/jaxlint` GitHub URLs until linkcheck can verify them reliably):
 
 ```bash
 uv run sphinx-build -b linkcheck docs docs/_build/linkcheck
@@ -63,16 +63,16 @@ uv run sphinx-build -b linkcheck docs docs/_build/linkcheck
 
 **`sphinx-build -W` vs `linkcheck`**
 
-- **HTML / RTD:** Local CI and Read the Docs use **warnings-as-errors** for the main documentation build: **`sphinx-build -W -b html ...`** in [`.github/workflows/ci.yml`](https://github.com/jax-ml/jaxlint/blob/main/.github/workflows/ci.yml) and **`sphinx: fail_on_warning: true`** in [`.readthedocs.yml`](../.readthedocs.yml). Any Sphinx warning fails that build.
+- **HTML / RTD:** Local CI and Read the Docs use **warnings-as-errors** for the main documentation build: **`sphinx-build -W -b html ...`** in [`.github/workflows/ci.yml`](https://github.com/maraxen/jaxlint/blob/main/.github/workflows/ci.yml) and **`sphinx: fail_on_warning: true`** in [`.readthedocs.yml`](../.readthedocs.yml). Any Sphinx warning fails that build.
 - **`linkcheck`:** The same CI job runs **`sphinx-build -b linkcheck`** **without** **`-W`**. That means generic Sphinx warnings are **not** promoted to errors by `-W` on the linkcheck step; **`linkcheck`** still exits non-zero when it reports broken links that are **not** covered by **`linkcheck_ignore`**.
 
 **Read the Docs behavior**
 
-- Builds are configured via [`.readthedocs.yml`](https://github.com/jax-ml/jaxlint/blob/main/.readthedocs.yml) at the repo root.
+- Builds are configured via [`.readthedocs.yml`](https://github.com/maraxen/jaxlint/blob/main/.readthedocs.yml) at the repo root.
 - **`formats: [pdf, htmlzip]`** produces versioned downloadable artifacts on **branch/tag builds**. Per RTD policy, pull-request preview builds typically emit **HTML only** — treat PDF/htmlzip verification as a **`latest`** / release build step.
 - `sphinx.fail_on_warning` is **`true`** in the repo-root `.readthedocs.yml`, so RTD builds fail on Sphinx warnings once the hosted pipeline matches local `sphinx-build -W` hygiene.
 
-After the hosted project exists, update repository URLs in **`docs/conf.py`** and [`index.md`](index.md) if yours differ from the `jax-ml/jaxlint` placeholders.
+After the hosted project exists, update repository URLs in **`docs/conf.py`** and [`index.md`](index.md) if yours differ from the `maraxen/jaxlint` placeholders.
 
 ## Documentation audit checklist (releases)
 
@@ -101,8 +101,8 @@ Open `htmlcov/index.html` locally after the run completes to browse annotated so
 
 **Baseline snapshot (manual, May 2026):** `uv run pytest -q --cov=jaxlint` reports **~76% overall line coverage** with `needs_jax` tests skipped locally. The largest remaining gaps are `jaxlint.hlo` (needs JAX plus export plumbing) and some doc-style edge cases.
 
-[`pyproject.toml`](https://github.com/jax-ml/jaxlint/blob/main/pyproject.toml) configures `[tool.coverage.run]` / `[tool.coverage.report]`, including a conservative **`fail_under`** guard for accidental regressions.
+[`pyproject.toml`](https://github.com/maraxen/jaxlint/blob/main/pyproject.toml) configures `[tool.coverage.run]` / `[tool.coverage.report]`, including a conservative **`fail_under`** guard for accidental regressions.
 
 ## Continuous integration
 
-GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/jax-ml/jaxlint/blob/main/.github/workflows/ci.yml)) runs Ruff plus smoke tests on every PR, **`pytest -m lsp`** and **`pytest -m mcp`** (with the optional extras installed), a dedicated **JAX / HLO** job that installs `jaxlint[hlo]` and runs `pytest -m needs_jax`, and (on pushes to `main` or `master`) a Sphinx HTML + linkcheck job. On **pull requests**, that docs job runs only when **docs-related paths** change (see the path-globs comment at the top of the workflow file).
+GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/maraxen/jaxlint/blob/main/.github/workflows/ci.yml)) runs Ruff plus smoke tests on every PR, **`pytest -m lsp`** and **`pytest -m mcp`** (with the optional extras installed), a dedicated **JAX / HLO** job that installs `jaxlint[hlo]` and runs `pytest -m needs_jax`, and (on pushes to `main` or `master`) a Sphinx HTML + linkcheck job. On **pull requests**, that docs job runs only when **docs-related paths** change (see the path-globs comment at the top of the workflow file).

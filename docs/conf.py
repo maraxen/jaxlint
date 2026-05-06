@@ -15,7 +15,7 @@ def _canonical_github_https() -> str:
         return f"https://github.com/{path}"
     if clone.startswith("https://github.com/"):
         return clone.removesuffix(".git").removesuffix("/")
-    return "https://github.com/jax-ml/jaxlint"
+    return "https://github.com/maraxen/jaxlint"
 
 
 _repo_url = _canonical_github_https()
@@ -53,11 +53,11 @@ intersphinx_mapping = {
 # RTD project URL and org repo root — linkcheck ignores (branch ii: keep while not stable 200).
 # Verified 2026-05-06 with `curl -sI -L` (see Roadmap “Canonical hosted URLs” table for evidence).
 #   https://jaxlint.readthedocs.io/  → HTTP/2 404 (Proxito-404; project not published at URL).
-#   https://github.com/jax-ml/jaxlint → HTTP/2 404 (repo missing or private at path).
+#   https://github.com/maraxen/jaxlint → HTTP/2 404 (repo missing or private at path).
 # Next review: remove ignores when both return stable 200 (target: 2026-10-01).
 linkcheck_ignore = [
     r"^https://jaxlint\.readthedocs\.io",
-    r"^https://github\.com/jax-ml/jaxlint",
+    r"^https://github\.com/maraxen/jaxlint",
 ]
 linkcheck_timeout = 15
 linkcheck_retries = 2
