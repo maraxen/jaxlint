@@ -6,7 +6,7 @@ This page is the **canonical** roadmap. The README carries a short pointer so it
 
 **jaxlint** stays **easy to drive from CI and editors**: a JAX-aware static checker and doc-quality tool whose **library surface** (`jaxlint.core`) stays **import-light** (no JAX) while **`jaxlint[hlo]`** can go deeper where JAX and exports are already available.
 
-## Shipped baseline (aligned with 0.2.x)
+## Shipped baseline (current release)
 
 This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.3.1**); treat that as the source of truth for semver, not an informal “v0.1” label.
 
