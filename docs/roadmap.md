@@ -49,6 +49,19 @@ Trusted **HTTP status** values below come from **`curl -sI -L`** (not “should 
 | **Performance at scale** | **Shipped (May 2026):** opt-in disk cache via **`jaxlint check --cache-dir`** and **`[tool.jaxlint] cache-dir`** (serialized diagnostics; config fingerprint + file stats). **Shipped (Aug 2026):** single parse per file on `check`, `run_checks(..., jobs=)` parallelism. |
 | **Config evolution** | **Shipped (May 2026):** **`severity-overrides`** under **`[tool.jaxlint]`** / **`[jaxlint]`**, optional **`jaxlint.toml`** discovery + **`--config` file**, **`CACHE_FORMAT_VERSION`** bump with fingerprinted overrides; SARIF/GitHub levels follow post-override **`Diagnostic.severity`**. **Shipped (0.3.1):** native **`[jaxlint]`** table in **`jaxlint.toml`** with legacy **`[tool.jaxlint]`** compatibility (mutually exclusive in-file). **Shipped (0.4.1):** SARIF rule descriptors, **`ruleIndex`**, optional HTTPS **`sarif-rule-docs-base`** for **`helpUri`**. **Remaining:** org-specific severity policies beyond catalogue + overrides if needed. |
 
+## Polish horizon
+
+Optional extensions and housekeeping — **no committed delivery date**. Revisit when effort/reward or external prerequisites (for example public RTD/GitHub URLs) line up.
+
+| Track | Details |
+|-------|---------|
+| **CLI output** | Further **`--format rich`** polish beyond **0.4.0** (panel + summary + OSC 8): layout tweaks, copy refinements, or other terminal UX — only if maintainers want more than the current baseline. |
+| **Hosted docs** | When canonical Read the Docs and GitHub URLs return stable **200**, shrink **`linkcheck_ignore`** in **`docs/conf.py`**, update the **[Canonical hosted URLs](#canonical-hosted-urls)** evidence rows, and drop ignores that exist only for placeholder **404**s (see **next review** on that table). |
+| **HLO goldens** | Broader StableHLO / export-heavy fixtures under **`tests/fixtures/hlo/`**; optional deeper MLIR parsing than the current regex-oriented **`SemanticAnalyzer`** helpers — **stretch**, not required for baseline credibility. |
+| **LSP** | Incremental editor ergonomics that stay **thin** and aligned with **`jaxlint check`** semantics (for example richer diagnostics metadata where LSP allows). **Formatting** and heavy IDE features remain **out of scope** unless explicitly reopened. |
+| **Config / SARIF** | Org-specific severity or policy layers on top of the built-in catalogue + **`severity-overrides`** + SARIF **`helpUri`** — only if downstream consumers ask for them. |
+| **HLO diagnostics (rules)** | **`HLO*`** rules or deeper analysers **after** [ADR 0001](adr/0001-hlo-diagnostics-feasibility.md) Phase A metrics and kill criteria — gated in the ADR, not part of near-term polish by default. |
+
 ## Longer horizon / exploratory
 
 These are **not committed** milestones; revisit when upstream JAX and IDE ecosystems move.
