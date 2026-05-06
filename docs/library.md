@@ -41,7 +41,7 @@ diags = run_checks(paths, cfg=cfg, perf=True, doc=True, mathjx=True)
 ```
 
 - **`run_checks` return order:** The list is **pre-sorted** by `Diagnostic.sort_key()` (`path`, `line`, `column`, `rule_id`). Callers should not rely on discovery or insertion order.
-- **`jobs`:** `None` uses `min(32, os.process_cpu_count() or 1)`; `1` forces serial file processing; larger values use a `ThreadPoolExecutor` over files. `LintConfig` must be treated as **read-only** across workers.
+- **`jobs`:** `None` uses `min(32, usable CPU count)` (same semantics as the CLI: `os.process_cpu_count()` on Python 3.13+, else `os.cpu_count()`); `1` forces serial file processing; larger values use a `ThreadPoolExecutor` over files. `LintConfig` must be treated as **read-only** across workers.
 - **`perf`:** AST performance sensors (JL rules).
 - **`doc`:** Docstring sections (JD rules, plus style integration).
 - **`mathjx`:** MathJax diagnostics (JM rules) layered on docstring text.

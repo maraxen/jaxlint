@@ -58,6 +58,8 @@ intersphinx_mapping = {
 linkcheck_ignore = [
     r"^https://jaxlint\.readthedocs\.io",
     r"^https://github\.com/maraxen/jaxlint",
+    # OASIS often returns 403 to automated clients (linkcheck); spec is stable.
+    r"^https://docs\.oasis-open\.org/sarif/",
 ]
 linkcheck_timeout = 15
 linkcheck_retries = 2

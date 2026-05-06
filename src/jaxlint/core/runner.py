@@ -330,8 +330,19 @@ def format_diagnostics(
     raise ValueError(msg)
 
 
+def _usable_process_cpu_count() -> int:
+    """Prefer ``os.process_cpu_count()`` (3.13+), else ``os.cpu_count()``."""
+    fn = getattr(os, "process_cpu_count", None)
+    if fn is not None:
+        n = fn()
+        if n is not None and n > 0:
+            return n
+    n = os.cpu_count()
+    return n if n and n > 0 else 1
+
+
 def _default_jobs() -> int:
-    return min(32, os.process_cpu_count() or 1)
+    return min(32, _usable_process_cpu_count())
 
 
 def _cached_diagnostics_for_file(

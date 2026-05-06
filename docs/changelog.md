@@ -24,6 +24,8 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 
 ## Unreleased
 
+- **Library / CLI:** Default **`-j`** / **`run_checks(..., jobs=None)`** uses **`os.process_cpu_count()`** on Python **3.13+** and falls back to **`os.cpu_count()`** on **3.11** / **3.12** (avoids **`AttributeError`** in CI and on older runtimes).
+- **Docs:** Sphinx **linkcheck** ignores the **OASIS SARIF** spec URL (often returns **403** to automated clients).
 - **Docs / HLO:** [Goldens: mapping vs counts](hlo.md#goldens-mapping-vs-counts) explains **`get_operation_inventory`** vs **`get_source_mapping`** vs **`get_operations`**; [ADR 0001](adr/0001-hlo-diagnostics-feasibility.md) tracks Phase A feasibility before **`HLO*`** rules.
 - **LSP (optional):** **`jaxlint[lsp]`** adds a **diagnostics-only** language server (**stdio**, **full** document sync, **`file://`** URIs only). Entrypoints: **`jaxlint-lsp`**, **`python -m jaxlint.lsp`**. Uses **`load_config(path.parent)`** and **`diagnostics_for_python_source`** (no disk cache in the server path). See [Language server](lsp.md).
 - **Library:** **`diagnostics_for_python_source`** on **`jaxlint.core`** for path + source string (sorted diagnostics; cache-free).
