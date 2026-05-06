@@ -2,6 +2,10 @@
 
 Notable changes to jaxlint are listed here. Versions match the `version` field in [`pyproject.toml`](https://github.com/jax-ml/jaxlint/blob/main/pyproject.toml) at release time.
 
+## 0.3.2
+
+- **LSP:** Server-side debounce and cancellation for **`textDocument/didChange`**: environment variable **`JAXLINT_LSP_DEBOUNCE_MS`** (default **200** ms; **`0`** disables debounce and restores the previous immediate, sequential behaviour). Per-file **canonical URI** state: cancel prior debounced **asyncio** work, **generation** guard so superseded runs do not publish, **`didClose`** invalidation and **empty** diagnostics, live buffer read in the **thread worker** after debounce. See [Language server](lsp.md).
+
 ## Unreleased
 
 - **LSP (optional):** **`jaxlint[lsp]`** adds a **diagnostics-only** language server (**stdio**, **full** document sync, **`file://`** URIs only). Entrypoints: **`jaxlint-lsp`**, **`python -m jaxlint.lsp`**. Uses **`load_config(path.parent)`** and **`diagnostics_for_python_source`** (no disk cache in the server path). See [Language server](lsp.md).

@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 import json
+import os
+import select
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 pytest.importorskip("pygls")
+
+# Deterministic LSP subprocess env: disable server debounce unless a test overrides it.
+_LSP_ENV_NO_DEBOUNCE = os.environ | {"JAXLINT_LSP_DEBOUNCE_MS": "0"}
 
 
 def _write_message(stream, obj: dict[str, Any]) -> None:
@@ -57,6 +63,7 @@ def test_lsp_publish_diagnostics_on_did_open(fixtures_dir: Path, tmp_path: Path)
         stderr=subprocess.PIPE,
         cwd=tmp_path,
         text=False,
+        env=_LSP_ENV_NO_DEBOUNCE,
     )
     assert proc.stdin is not None and proc.stdout is not None
 
@@ -136,6 +143,7 @@ def test_lsp_did_change_updates_diagnostics(fixtures_dir: Path, tmp_path: Path) 
         stderr=subprocess.PIPE,
         cwd=tmp_path,
         text=False,
+        env=_LSP_ENV_NO_DEBOUNCE,
     )
     assert proc.stdin is not None and proc.stdout is not None
 
@@ -227,6 +235,7 @@ def test_lsp_did_close_clears_diagnostics(fixtures_dir: Path, tmp_path: Path) ->
         stderr=subprocess.PIPE,
         cwd=tmp_path,
         text=False,
+        env=_LSP_ENV_NO_DEBOUNCE,
     )
     assert proc.stdin is not None and proc.stdout is not None
 
@@ -294,6 +303,110 @@ def test_lsp_did_close_clears_diagnostics(fixtures_dir: Path, tmp_path: Path) ->
         close_uri, close_diags = next_publish()
         assert close_uri == uri
         assert close_diags == []
+    finally:
+        proc.stdin.close()
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+
+@pytest.mark.integration
+@pytest.mark.lsp
+def test_lsp_debounce_coalesces_rapid_did_change(fixtures_dir: Path, tmp_path: Path) -> None:
+    """Many rapid didChange notifications should not yield one JD001 publish per change."""
+    src = (fixtures_dir / "jd001_missing_docstring.py").read_text(encoding="utf-8")
+    doc_path = tmp_path / "rapid_debounce.py"
+    doc_path.write_text(src, encoding="utf-8")
+    uri = doc_path.resolve().as_uri()
+    num_changes = 25
+
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "jaxlint.lsp"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        text=False,
+        env=os.environ | {"JAXLINT_LSP_DEBOUNCE_MS": "50"},
+    )
+    assert proc.stdin is not None and proc.stdout is not None
+
+    try:
+        _write_message(
+            proc.stdin,
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "processId": None,
+                    "rootUri": None,
+                    "capabilities": {},
+                    "clientInfo": {"name": "pytest-jaxlint", "version": "0"},
+                },
+            },
+        )
+        while True:
+            msg = _read_message(proc.stdout)
+            assert msg is not None
+            if msg.get("id") == 1:
+                break
+
+        _write_message(proc.stdin, {"jsonrpc": "2.0", "method": "initialized", "params": {}})
+
+        _write_message(
+            proc.stdin,
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {
+                    "textDocument": {
+                        "uri": uri,
+                        "languageId": "python",
+                        "version": 1,
+                        "text": src,
+                    }
+                },
+            },
+        )
+
+        for ver in range(2, 2 + num_changes):
+            churn = src + "\n" * (ver % 4)
+            _write_message(
+                proc.stdin,
+                {
+                    "jsonrpc": "2.0",
+                    "method": "textDocument/didChange",
+                    "params": {
+                        "textDocument": {"uri": uri, "version": ver},
+                        "contentChanges": [{"text": churn}],
+                    },
+                },
+            )
+
+        time.sleep(0.45)
+
+        jd001_publish_events = 0
+        idle_timeouts = 0
+        while idle_timeouts < 8:
+            ready, _, _ = select.select([proc.stdout], [], [], 0.2)
+            if not ready:
+                idle_timeouts += 1
+                continue
+            idle_timeouts = 0
+            msg = _read_message(proc.stdout)
+            assert msg is not None
+            if msg.get("method") != "textDocument/publishDiagnostics":
+                continue
+            params = msg.get("params") or {}
+            if any(str(d.get("code")) == "JD001" for d in (params.get("diagnostics") or [])):
+                jd001_publish_events += 1
+
+        assert jd001_publish_events >= 1
+        assert jd001_publish_events < num_changes
+        assert jd001_publish_events <= 10
     finally:
         proc.stdin.close()
         proc.terminate()

@@ -30,7 +30,7 @@ Wire your editor to launch one of the above with **stdio** transport. There is n
 | **Configuration** | Resolved with **`load_config(path.parent)`** from the file path — same discovery as the CLI (**`jaxlint.toml`** then **`pyproject.toml`** in each ancestor; native **`[jaxlint]`** or legacy **`[tool.jaxlint]`** in **`jaxlint.toml`**, **`[tool.jaxlint]`** only in **`pyproject.toml`**). |
 | **Disk cache** | **Not used.** The LSP path calls **`diagnostics_for_python_source`** with explicit source text and a **`LintConfig`**; there is no cache read/write in the server. |
 | **CLI overrides** | There is **no** `--select` / `--ignore` equivalent in the server; rule selection comes from config only. |
-| **Debounce** | Per-change republish is immediate (**debouncing is left to the client** or future work). |
+| **Debounce** | Server-side debounce for **`textDocument/didChange`** via environment variable **`JAXLINT_LSP_DEBOUNCE_MS`** (integer milliseconds, default **200**). Set to **`0`** to disable debounce and run the same sequential, immediate republish path as before. **`textDocument/didOpen`** is always immediate. |
 
 ## Library hook
 

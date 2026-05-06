@@ -8,7 +8,7 @@ This page is the **canonical** roadmap. The README carries a short pointer so it
 
 ## Shipped baseline (current release)
 
-This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.3.1**); treat that as the source of truth for semver, not an informal “v0.1” label.
+This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.3.2**); treat that as the source of truth for semver, not an informal “v0.1” label.
 
 Already in tree today:
 
@@ -35,7 +35,7 @@ Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 
 | Initiative | Goal |
 |------------|------|
-| **Language Server (LSP)** | **Shipped (v1):** optional **`jaxlint[lsp]`** — Pygls **stdio** server, **full** sync, **`file://`** only, **`load_config(path.parent)`**, **`diagnostics_for_python_source`** (no disk cache). **Remaining:** debounce/client policy, richer LSP features only if they stay thin (formatting still out of scope for this server). |
+| **Language Server (LSP)** | **Shipped (v1):** optional **`jaxlint[lsp]`** — Pygls **stdio** server, **full** sync, **`file://`** only, **`load_config(path.parent)`**, **`diagnostics_for_python_source`** (no disk cache). **Shipped (0.3.2):** server-side **`didChange`** debounce via **`JAXLINT_LSP_DEBOUNCE_MS`** (default **200** ms; **`0`** = legacy sequential republish), generation/lifecycle guards + **`didClose`** cancellation semantics. **Remaining:** richer LSP features only if they stay thin (formatting still out of scope for this server). |
 | **HLO diagnostics** | Optional analysers over lowered IR/text (similar in spirit to “HLO dump regex” tooling described in jaxbeans discussions): scatter→gather fusion gaps, noisy kernel launches — scoped to **`jaxlint.hlo`**. |
 | **Performance at scale** | **Shipped (May 2026):** opt-in disk cache via **`jaxlint check --cache-dir`** and **`[tool.jaxlint] cache-dir`** (serialized diagnostics; config fingerprint + file stats). **Shipped (Aug 2026):** single parse per file on `check`, `run_checks(..., jobs=)` parallelism. |
 | **Config evolution** | **Shipped (May 2026):** **`severity-overrides`** under **`[tool.jaxlint]`** / **`[jaxlint]`**, optional **`jaxlint.toml`** discovery + **`--config` file**, **`CACHE_FORMAT_VERSION`** bump with fingerprinted overrides; SARIF/GitHub levels follow post-override **`Diagnostic.severity`**. **Shipped (0.3.1):** native **`[jaxlint]`** table in **`jaxlint.toml`** with legacy **`[tool.jaxlint]`** compatibility (mutually exclusive in-file). **Remaining:** richer SARIF rule metadata / org severity policies if needed. |
@@ -72,6 +72,22 @@ Open issues or RFC-style PRs that spell out **rule IDs**, **default severity**, 
 | **CF6** | Docs (`configuration.md`, `cli.md`), changelog **0.3.0**, tests | **Shipped** |
 
 **Outcome review:** **APPROVE** (after remediation: cache fingerprint regression test for severity-only override delta).
+
+## Current sprint notes (May 2026 — LSP debounce / cancellation)
+
+**Theme:** Server-side **`textDocument/didChange`** debounce (**`JAXLINT_LSP_DEBOUNCE_MS`**) with **generation** + **`didClose`** cancellation, canonical **`file://`** keys, live buffer read after debounce.
+
+**task_id:** `jaxlint-sprint-2026-05-06`
+
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| **DB1** | **`didChange`** debounce (**asyncio** sleep when ms > **0**); **`didOpen`** immediate | **Shipped** |
+| **DB2** | Generation guard + **`closed`** set; **`didClose`** bump/cancel/**empty** publish | **Shipped** |
+| **DB3** | **`JAXLINT_LSP_DEBOUNCE_MS`** (**default 200**; **0** sequential immediate path) | **Shipped** |
+| **DB4** | Subprocess tests (**debounce=0** baseline + rapid-change coalescing test) | **Shipped** |
+| **DB5** | **`docs/lsp.md`**, changelog **0.3.2**, semver bump | **Shipped** |
+
+**Outcome review:** **APPROVE-with-nits** (**full pytest** + **ruff**; reviewer nits: optional non-`file://` subprocess smoke, changelog redundancy vs **Unreleased**).
 
 ## Current sprint notes (May 2026 — Native `jaxlint.toml` manifest)
 
