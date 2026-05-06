@@ -1,3 +1,13 @@
+# CI — jaxlint
+#
+# Docs job (`docs`): runs on every push to `main` / `master`. On `pull_request`, runs only when
+# these paths change (frozen glob list for review/audit):
+#   - docs/**
+#   - docs/conf.py          (covered by docs/**)
+#   - docs/roadmap.md        (covered by docs/**)
+#   - .readthedocs.yml
+#   - README.md
+#
 name: CI
 
 on:
@@ -70,7 +80,39 @@ jobs:
       - name: pytest (needs_jax only)
         run: uv run pytest -q -m needs_jax
 
+  # Gate docs work on PRs to docs-related paths; always run on default-branch pushes.
+  docs-should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.decide.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+              - '.readthedocs.yml'
+              - 'README.md'
+
+      - id: decide
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.filter.outputs.docs }}" = "true" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
   docs:
+    needs: docs-should-run
+    if: needs.docs-should-run.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

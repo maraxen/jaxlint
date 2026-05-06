@@ -42,6 +42,10 @@ When adding a golden file, keep it **minimal**, name it after the behaviour unde
 
 Jaxlint tracks upstream JAX’s docs stack at a lighter weight: **Sphinx**, **MyST** (`myst-parser`), **`sphinx-book-theme`**, pinned in the **`docs`** optional extra of [`pyproject.toml`](../pyproject.toml).
 
+### Hosted documentation & links
+
+Canonical **Read the Docs** and **GitHub** URLs, measured **HTTP status** (including **404** where that is still true), **`linkcheck_ignore`** policy, and **next review** date live in the **[Canonical hosted URLs](roadmap.md#canonical-hosted-urls)** table on the [Roadmap](roadmap.md). The ignore regexes and inline evidence are in **[`docs/conf.py`](conf.py)** (`linkcheck_ignore`).
+
 Local HTML:
 
 ```bash
@@ -54,6 +58,11 @@ Link validation (see [`linkcheck_ignore` in `docs/conf.py`](conf.py); ignores co
 ```bash
 uv run sphinx-build -b linkcheck docs docs/_build/linkcheck
 ```
+
+**`sphinx-build -W` vs `linkcheck`**
+
+- **HTML / RTD:** Local CI and Read the Docs use **warnings-as-errors** for the main documentation build: **`sphinx-build -W -b html ...`** in [`.github/workflows/ci.yml`](https://github.com/jax-ml/jaxlint/blob/main/.github/workflows/ci.yml) and **`sphinx: fail_on_warning: true`** in [`.readthedocs.yml`](../.readthedocs.yml). Any Sphinx warning fails that build.
+- **`linkcheck`:** The same CI job runs **`sphinx-build -b linkcheck`** **without** **`-W`**. That means generic Sphinx warnings are **not** promoted to errors by `-W` on the linkcheck step; **`linkcheck`** still exits non-zero when it reports broken links that are **not** covered by **`linkcheck_ignore`**.
 
 **Read the Docs behavior**
 
@@ -94,4 +103,4 @@ Open `htmlcov/index.html` locally after the run completes to browse annotated so
 
 ## Continuous integration
 
-GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/jax-ml/jaxlint/blob/main/.github/workflows/ci.yml)) runs Ruff plus smoke tests on every PR, **`pytest -m lsp`** and **`pytest -m mcp`** (with the optional extras installed), a dedicated **JAX / HLO** job that installs `jaxlint[hlo]` and runs `pytest -m needs_jax`, a Sphinx HTML + linkcheck job, plus (on pushes to `main`) the full pytest suite with coverage uploads from the main `lint-test` matrix.
+GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/jax-ml/jaxlint/blob/main/.github/workflows/ci.yml)) runs Ruff plus smoke tests on every PR, **`pytest -m lsp`** and **`pytest -m mcp`** (with the optional extras installed), a dedicated **JAX / HLO** job that installs `jaxlint[hlo]` and runs `pytest -m needs_jax`, and (on pushes to `main` or `master`) a Sphinx HTML + linkcheck job. On **pull requests**, that docs job runs only when **docs-related paths** change (see the path-globs comment at the top of the workflow file).

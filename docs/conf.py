@@ -51,7 +51,7 @@ intersphinx_mapping = {
 }
 
 # RTD project URL and org repo root — linkcheck ignores (branch ii: keep while not stable 200).
-# Verified 2026-05-05 with `curl -sI -L`:
+# Verified 2026-05-06 with `curl -sI -L` (see Roadmap “Canonical hosted URLs” table for evidence).
 #   https://jaxlint.readthedocs.io/  → HTTP/2 404 (Proxito-404; project not published at URL).
 #   https://github.com/jax-ml/jaxlint → HTTP/2 404 (repo missing or private at path).
 # Next review: remove ignores when both return stable 200 (target: 2026-10-01).

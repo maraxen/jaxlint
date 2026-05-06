@@ -25,8 +25,17 @@ Already in tree today:
 
 Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 
+### Canonical hosted URLs
+
+Trusted **HTTP status** values below come from **`curl -sI -L`** (not “should be 200”); both canonical URLs still **404** as of the last check.
+
+| URL | Kind | Last checked | HTTP status | `linkcheck_ignore` rationale | Next review |
+|-----|------|--------------|-------------|------------------------------|-------------|
+| `https://jaxlint.readthedocs.io/` | Read the Docs project | 2026-05-06 | **404** (`Proxito-404`) | Ignored in `docs/conf.py` until the project serves a stable **200** at this URL (avoids failing `linkcheck` on placeholders). | **2026-10-01** |
+| `https://github.com/jax-ml/jaxlint` | GitHub repository root | 2026-05-06 | **404** (GitHub “not found” page) | Same — ignored until the repo is reachable with a stable **200**. | **2026-10-01** |
+
 1. **Output formats** — **Shipped:** GitHub annotation JSON, **SARIF** 2.1.0 (`--format sarif`), **`compact`** text, and **`rich`** (`--format rich`; explicit **`rich`** dependency). **Shipped (0.4.0):** Rich **panel** + **severity summary**, **`COLUMNS`** / terminal width / fallback **120**, optional **OSC 8** `file:` hyperlinks when stdout is a TTY and colors are on. **Remaining:** optional further polish if desired.
-2. **Hosted docs hygiene** — **`sphinx.fail_on_warning` is already on** in `.readthedocs.yml`. **Partial (July 2026):** **`curl -sI -L`** (2026-05-05) still returns **404** for `https://jaxlint.readthedocs.io/` and `https://github.com/jax-ml/jaxlint`; **`linkcheck_ignore`** stays until stable **200** (next review **2026-10-01**; see `docs/conf.py` comments).
+2. **Hosted docs hygiene** — **`sphinx.fail_on_warning` is already on** in `.readthedocs.yml`. **Partial:** canonical URLs still **404** — see **[Canonical hosted URLs](#canonical-hosted-urls)**; **`linkcheck_ignore`** in `docs/conf.py` stays until both return stable **200** (**next review 2026-10-01**).
 3. **CI parity** — **Shipped:** required **`jax-hlo`** job installs `jaxlint[hlo]` and runs `pytest -m needs_jax` (merge-blocking). PR **`lint-test`** jobs run smoke + Ruff + **`pytest -m lsp`** + **`pytest -m mcp`** (with **`uv sync --extra lsp --extra mcp`**); full suite + coverage on **`main`** only.
 4. **API reference** — **Shipped:** Sphinx **autodoc** / **autosummary** for `jaxlint.core` (and configuration types under `jaxlint.core.config`; see **`api`** in the docs toctree). **`jaxlint.hlo`** stays a narrative-only page (`hlo`) so JAX is not imported on RTD builders.
 5. **HLO credibility** — **Shipped:** targeted pytest for `SemanticAnalyzer` / `GraphAuditSensor` (`get_operations`, `audit_kernel` / `audit_exported`, while and outfeed violation paths, `instrument_and_run` checkify failure). **Shipped (goldens):** StableHLO text fixtures under `tests/fixtures/hlo/` — **outfeed** / **`stablehlo.while`** **`audit_exported`** paths plus **add+constant** and **multiply+reshape** inventory goldens (duck-typed fake exports; **`@pytest.mark.needs_jax`**, **`jaxlint[hlo]`** in CI; merge-blocking **`jax-hlo`** — see [Changelog](changelog.md)). **Remaining:** broaden golden coverage for more export-heavy cases (and optional broader MLIR parsing) as needed.
