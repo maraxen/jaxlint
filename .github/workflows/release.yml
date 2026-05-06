@@ -1,7 +1,8 @@
 # Publish wheels/sdist to PyPI from annotated version tags.
 #
-# Trusted Publishing (OIDC): on PyPI, add a pending publisher for project **jaxlint**
-# linked to GitHub repository **maraxen/jaxlint** (environment optional).
+# Trusted Publishing (OIDC): PyPI pending publisher must match this repo + workflow file.
+# If PyPI is configured with GitHub Environment **pypi**, this job must set `environment: pypi`
+# so the OIDC token includes that claim (otherwise PyPI sees `environment: MISSING`).
 #
 name: Release
 
@@ -17,6 +18,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: pypi
     steps:
       - uses: actions/checkout@v4
 
