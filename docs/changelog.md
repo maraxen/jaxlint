@@ -12,6 +12,8 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 
 ## Unreleased
 
+- **Docs / HLO:** [Goldens: mapping vs counts](hlo.md#goldens-mapping-vs-counts) compares **`get_operation_inventory`**, **`get_source_mapping`**, and **`get_operations`**; [ADR 0001](adr/0001-hlo-diagnostics-feasibility.md) tracks Phase A feasibility before **`HLO*`** rules.
+- **Testing:** **`pytest-timeout`** (**60s** per **test function** with **`timeout_func_only`**) applies to **`needs_jax`** via **`tests/conftest.py`** (requires **`pytest-timeout`** dev dependency).
 - **LSP (optional):** **`jaxlint[lsp]`** adds a **diagnostics-only** language server (**stdio**, **full** document sync, **`file://`** URIs only). Entrypoints: **`jaxlint-lsp`**, **`python -m jaxlint.lsp`**. Uses **`load_config(path.parent)`** and **`diagnostics_for_python_source`** (no disk cache in the server path). See [Language server](lsp.md).
 - **Library:** **`diagnostics_for_python_source`** on **`jaxlint.core`** for path + source string (sorted diagnostics; cache-free).
 - **CI:** PR **`lint-test`** syncs with **`--extra lsp`** / **`--extra mcp`** and runs **`pytest -m lsp`** and **`pytest -m mcp`**.

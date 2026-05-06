@@ -34,6 +34,8 @@ uv run ruff check src tests
 
 ### HLO golden fixtures
 
+See **[Goldens: mapping vs counts](hlo.md#goldens-mapping-vs-counts)** on the [HLO extra](hlo.md) page for how **`get_source_mapping`**, **`get_operation_inventory`**, and **`get_operations`** relate to golden assertions.
+
 Some **`needs_jax`** tests load **pinned StableHLO / MLIR text** from `tests/fixtures/hlo/` instead of calling `jax.export` for every assertion. That lowers churn when export formatting changes, but **does not** remove the JAX + `jaxlint[hlo]` requirement: `SemanticAnalyzer` and the test module still import JAX-backed modules.
 
 When adding a golden file, keep it **minimal**, name it after the behaviour under test (for example `outfeed_side_effect.mlir`), and wire a `FakeExported`-style duck type or parser entry point in `tests/test_hlo_semantics.py` (or a dedicated test module) so CI’s `jax-hlo` job exercises it.

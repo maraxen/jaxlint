@@ -23,6 +23,18 @@ Actual behavior depends on JAX version, lowered IR, and how you invoke `audit_ke
 
 Merge-blocking CI runs **`pytest -m needs_jax`** against this stack; some tests load **pinned StableHLO snippets** from `tests/fixtures/hlo/` (see [Contributing — HLO golden fixtures](contributing.md#hlo-golden-fixtures)).
 
+## Goldens: mapping vs counts
+
+`SemanticAnalyzer` exposes three overlapping views of the same MLIR text:
+
+| View | API | Semantics |
+|------|-----|-----------|
+| **Operation counts** | `get_operation_inventory()` | Counts every **`stablehlo.*`** opcode substring (via regex); keys are full op names (`stablehlo.add`, …), values are **occurrence counts**. |
+| **Ordered operations** | `get_operations()` | Structured **`OperationInfo`** rows in **source order** (one row per matched defining op line). |
+| **Source mapping** | `get_source_mapping()` | Maps **`stablehlo.op`** name → Python-style **`loc("…")`** string when location metadata resolves; **last match wins** when the same op name appears multiple times or multiple locations compete (implementation walks regex matches and overwrites dict entries). |
+
+Goldens may assert **inventory** hashes/text, **mapping** snippets, or **operation lists**. Those snapshots can disagree at the level of “how many times X appears” vs “which location won for op X” — that is expected: use this table when extending fixtures so expectations match the API you assert against. Feasibility tracking for deeper HLO diagnostics lives in [ADR 0001](adr/0001-hlo-diagnostics-feasibility.md).
+
 ## CLI hint
 
 `jaxlint hlo` does not analyze a kernel by itself; it verifies the extra is importable and prints a reminder to call `GraphAuditSensor` from Python. Missing installs exit with code **`2`** (see [CLI](cli.md)).

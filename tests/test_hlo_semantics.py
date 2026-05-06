@@ -1,4 +1,8 @@
-"""Semantics tests for jaxlint.hlo (requires JAX via jaxlint[hlo])."""
+"""Semantics tests for jaxlint.hlo (requires JAX via jaxlint[hlo]).
+
+Golden semantics (**inventory vs mapping**) are documented under
+`Goldens: mapping vs counts` in ``docs/hlo.md``.
+"""
 
 from __future__ import annotations
 
