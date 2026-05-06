@@ -8,7 +8,7 @@ This page is the **canonical** roadmap. The README carries a short pointer so it
 
 ## Shipped baseline (aligned with 0.2.x)
 
-This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.3.0**); treat that as the source of truth for semver, not an informal “v0.1” label.
+This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.3.1**); treat that as the source of truth for semver, not an informal “v0.1” label.
 
 Already in tree today:
 
@@ -16,7 +16,7 @@ Already in tree today:
 |------|--------|
 | **CLI** (`check`, `doc`, `score`, `rules`, `init`, `version`, `hlo`) | Stable for core flows; `check`/`doc` support `--format text`, `compact`, `json`, `github` / `github-annotations`, **SARIF** 2.1.0 (`sarif` / `sarif-2.1.0`), or **`rich`** (table layout). **`check`** supports **`-j` / `--jobs`** for parallel file linting (see [CLI](cli.md)). |
 | **Rules** | JL/JD/JM catalogue with fixtures and docs. |
-| **Config** | `[tool.jaxlint]` parsing, selects/ignores/per-file ignores. |
+| **Config** | **`[jaxlint]`** in **`jaxlint.toml`** (native) or legacy **`[tool.jaxlint]`** there; **`[tool.jaxlint]`** only in **`pyproject.toml`**. Selects/ignores/per-file ignores and **`severity-overrides`**. |
 | **Testing** | Pytest tiers (`smoke` / `unit` / `integration` / `needs_jax` / `lsp` / `mcp`), coverage floor, GitHub Actions. Pull requests run **smoke** + **LSP** (`pytest -m lsp`) + **MCP** (`pytest -m mcp`) + lint; **full pytest + coverage** runs on **`main` pushes only** (`lint-test`). |
 | **Docs** | Sphinx + MyST + Read the Docs (HTML plus **PDF** plus **htmlzip** on version builds). |
 | **`jaxlint[hlo]`** | Optional imports; CLI only checks the extra — **merge-blocking `needs_jax` tests** cover export → `SemanticAnalyzer` / `GraphAuditSensor` behaviour (including `audit_exported`, while/outfeed rules, `get_operations`, checkify edges), not only import smoke. |
@@ -38,7 +38,7 @@ Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 | **Language Server (LSP)** | **Shipped (v1):** optional **`jaxlint[lsp]`** — Pygls **stdio** server, **full** sync, **`file://`** only, **`load_config(path.parent)`**, **`diagnostics_for_python_source`** (no disk cache). **Remaining:** debounce/client policy, richer LSP features only if they stay thin (formatting still out of scope for this server). |
 | **HLO diagnostics** | Optional analysers over lowered IR/text (similar in spirit to “HLO dump regex” tooling described in jaxbeans discussions): scatter→gather fusion gaps, noisy kernel launches — scoped to **`jaxlint.hlo`**. |
 | **Performance at scale** | **Shipped (May 2026):** opt-in disk cache via **`jaxlint check --cache-dir`** and **`[tool.jaxlint] cache-dir`** (serialized diagnostics; config fingerprint + file stats). **Shipped (Aug 2026):** single parse per file on `check`, `run_checks(..., jobs=)` parallelism. |
-| **Config evolution** | **Shipped (May 2026):** **`severity-overrides`** under **`[tool.jaxlint]`**, optional **`jaxlint.toml`** discovery + **`--config` file**, **`CACHE_FORMAT_VERSION`** bump with fingerprinted overrides; SARIF/GitHub levels follow post-override **`Diagnostic.severity`**. **Remaining:** reproducible standalone **`jaxlint.toml`** as the only project manifest (today still **`[tool.jaxlint]`** inside TOML), richer SARIF rule metadata / org severity policies if needed. |
+| **Config evolution** | **Shipped (May 2026):** **`severity-overrides`** under **`[tool.jaxlint]`** / **`[jaxlint]`**, optional **`jaxlint.toml`** discovery + **`--config` file**, **`CACHE_FORMAT_VERSION`** bump with fingerprinted overrides; SARIF/GitHub levels follow post-override **`Diagnostic.severity`**. **Shipped (0.3.1):** native **`[jaxlint]`** table in **`jaxlint.toml`** with legacy **`[tool.jaxlint]`** compatibility (mutually exclusive in-file). **Remaining:** richer SARIF rule metadata / org severity policies if needed. |
 
 ## Longer horizon / exploratory
 

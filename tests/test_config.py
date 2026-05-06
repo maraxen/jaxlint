@@ -74,7 +74,7 @@ def test_load_config_jaxlint_toml_over_pyproject_in_walk(tmp_path: Path) -> None
         encoding="utf-8",
     )
     (pkg / "jaxlint.toml").write_text(
-        '[tool.jaxlint]\ndocstring-style = "numpy"\n',
+        '[jaxlint]\ndocstring-style = "numpy"\n',
         encoding="utf-8",
     )
     cfg = load_config(pkg)
@@ -160,6 +160,105 @@ def test_rule_enabled_select_and_ignore() -> None:
     assert rule_enabled("JL001", cfg_select, p) is True
     assert rule_enabled("JL001", cfg_ignore, p) is False
     assert rule_enabled("JM001", cfg_ignore, p) is True
+
+
+@pytest.mark.unit
+def test_load_config_jaxlint_toml_native_section_only(tmp_path: Path) -> None:
+    jxl = tmp_path / "jaxlint.toml"
+    jxl.write_text(
+        """
+[jaxlint]
+select = ["JL"]
+strict-shapes = true
+""".strip(),
+        encoding="utf-8",
+    )
+    cfg = load_config(jxl)
+    assert cfg.select == frozenset(["JL"])
+    assert cfg.strict_shapes is True
+
+
+@pytest.mark.unit
+def test_load_config_jaxlint_toml_both_sections_raises(tmp_path: Path) -> None:
+    jxl = tmp_path / "jaxlint.toml"
+    jxl.write_text(
+        """
+[jaxlint]
+strict-shapes = true
+
+[tool.jaxlint]
+docstring-style = "google"
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="both \\[jaxlint\\] and \\[tool\\.jaxlint\\]"):
+        load_config(jxl)
+
+
+@pytest.mark.unit
+def test_load_config_pyproject_root_jaxlint_section_raises(tmp_path: Path) -> None:
+    pp = tmp_path / "pyproject.toml"
+    pp.write_text(
+        """
+[jaxlint]
+strict-shapes = true
+
+[tool.jaxlint]
+docstring-style = "numpy"
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="\\[tool\\.jaxlint\\]"):
+        load_config(pp)
+
+
+@pytest.mark.unit
+def test_native_and_legacy_jaxlint_toml_equivalent(tmp_path: Path) -> None:
+    native = tmp_path / "native" / "jaxlint.toml"
+    legacy = tmp_path / "legacy" / "jaxlint.toml"
+    native.parent.mkdir(parents=True)
+    legacy.parent.mkdir(parents=True)
+    native.write_text(
+        """
+[jaxlint]
+select = ["JL", "JM"]
+ignore = ["JM001"]
+docstring-style = "numpy"
+required-sections = ["Parameters", "Returns"]
+section-order = ["Parameters", "Returns", "Raises"]
+strict-shapes = true
+rubric-threshold = 0.5
+
+[jaxlint.per-file-ignores]
+"**/legacy_*.py" = "JL012"
+"a/b.py" = ["JD001"]
+
+[jaxlint.severity-overrides]
+JL005 = "warning"
+""".strip(),
+        encoding="utf-8",
+    )
+    legacy.write_text(
+        """
+[tool.jaxlint]
+select = ["JL", "JM"]
+ignore = ["JM001"]
+docstring-style = "numpy"
+required-sections = ["Parameters", "Returns"]
+section-order = ["Parameters", "Returns", "Raises"]
+strict-shapes = true
+rubric-threshold = 0.5
+
+[tool.jaxlint.per-file-ignores]
+"**/legacy_*.py" = "JL012"
+"a/b.py" = ["JD001"]
+
+[tool.jaxlint.severity-overrides]
+JL005 = "warning"
+""".strip(),
+        encoding="utf-8",
+    )
+    assert load_config(native) == load_config(legacy)
 
 
 @pytest.mark.unit

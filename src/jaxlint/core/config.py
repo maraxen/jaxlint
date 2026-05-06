@@ -1,4 +1,9 @@
-"""Load [tool.jaxlint] from jaxlint.toml or pyproject.toml."""
+"""Load lint settings from ``jaxlint.toml`` or ``pyproject.toml``.
+
+``jaxlint.toml`` accepts a first-class ``[jaxlint]`` table or legacy ``[tool.jaxlint]``
+(but not both). ``pyproject.toml`` must use ``[tool.jaxlint]`` only — a top-level
+``[jaxlint]`` table is rejected.
+"""
 
 from __future__ import annotations
 
@@ -36,7 +41,10 @@ class LintConfig:
 
 
 def load_config(start: Path | None = None) -> LintConfig:
-    """Load ``[tool.jaxlint]`` from the config discovery walk or a direct config file path.
+    """Load lint configuration from the discovery walk or a direct config file path.
+
+    ``jaxlint.toml`` may use native ``[jaxlint]`` or legacy ``[tool.jaxlint]`` (mutually
+    exclusive). ``pyproject.toml`` only allows ``[tool.jaxlint]``.
 
     * ``start`` is ``None`` — walk upward from the current working directory.
     * ``start`` is a directory — walk upward from ``start.resolve()`` (``[root] + root.parents``).
@@ -72,9 +80,14 @@ def _load_config_walk(root: Path) -> LintConfig:
     return LintConfig.default()
 
 
-def _parse_severity_value(raw: object, *, key: str, path: Path) -> Severity:
+def _parse_severity_value(
+    raw: object, *, key: str, path: Path, section_label: str
+) -> Severity:
     if not isinstance(raw, str):
-        msg = f"{path}: [tool.jaxlint] severity-overrides[{key!r}] must be a string, got {type(raw).__name__}"
+        msg = (
+            f"{path}: {section_label} severity-overrides[{key!r}] must be a string, "
+            f"got {type(raw).__name__}"
+        )
         raise ValueError(msg)
     s = raw.strip().lower()
     if s not in _VALID_SEVERITY_TOKENS:
@@ -83,38 +96,108 @@ def _parse_severity_value(raw: object, *, key: str, path: Path) -> Severity:
     return Severity(s)
 
 
-def _validate_severity_override_keys(keys: list[str], *, path: Path) -> None:
+def _validate_severity_override_keys(keys: list[str], *, path: Path, section_label: str) -> None:
     for key in keys:
         if not any(pattern_matches(rule_id, key) for rule_id in KNOWN_RULE_IDS):
-            msg = f"{path}: severity-overrides key {key!r} does not match any known rule id"
+            msg = (
+                f"{path}: {section_label} severity-overrides key {key!r} "
+                "does not match any known rule id"
+            )
             raise ValueError(msg)
 
 
-def _parse_severity_overrides_table(raw: dict[str, Any], *, path: Path) -> dict[str, Severity]:
+def _parse_severity_overrides_table(
+    raw: dict[str, Any], *, path: Path, section_label: str
+) -> dict[str, Severity]:
     if not raw:
         return {}
     out: dict[str, Severity] = {}
     for k, v in raw.items():
         if not isinstance(k, str):
-            msg = f"{path}: severity-overrides keys must be strings, got {type(k).__name__}"
+            msg = (
+                f"{path}: {section_label} severity-overrides keys must be strings, "
+                f"got {type(k).__name__}"
+            )
             raise ValueError(msg)
-        out[k] = _parse_severity_value(v, key=k, path=path)
-    _validate_severity_override_keys(sorted(out.keys()), path=path)
+        out[k] = _parse_severity_value(v, key=k, path=path, section_label=section_label)
+    _validate_severity_override_keys(sorted(out.keys()), path=path, section_label=section_label)
     return out
 
 
-def _parse_tool_jaxlint(path: Path) -> LintConfig:
-    data = tomllib.loads(path.read_text(encoding="utf-8"))
-    raw: dict[str, Any] = (data.get("tool") or {}).get("jaxlint") or {}
+def _extract_raw_jaxlint(path: Path, data: dict[str, Any]) -> dict[str, Any]:
+    """Return the jaxlint settings table after applying file-kind rules (see module docstring)."""
+    raw, _section_label = _resolve_lint_raw_table(path, data)
+    return raw
 
+
+def _resolve_lint_raw_table(path: Path, data: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    """Resolve the lint config dict and TOML section label used in parse-time errors."""
+    name = path.name
+    tool_obj = data.get("tool")
+    tool: dict[str, Any] = tool_obj if isinstance(tool_obj, dict) else {}
+    has_tool_jaxlint = "jaxlint" in tool
+    has_root_jaxlint = "jaxlint" in data
+
+    if name == "pyproject.toml":
+        if has_root_jaxlint:
+            msg = (
+                f"{path}: configure jaxlint under [tool.jaxlint] only in pyproject.toml; "
+                "remove the top-level [jaxlint] table."
+            )
+            raise ValueError(msg)
+        jaxlint_raw = tool.get("jaxlint")
+        if jaxlint_raw is None:
+            return {}, "[tool.jaxlint]"
+        if not isinstance(jaxlint_raw, dict):
+            msg = (
+                f"{path}: [tool.jaxlint] must be a table, "
+                f"got {type(jaxlint_raw).__name__}"
+            )
+            raise ValueError(msg)
+        return jaxlint_raw, "[tool.jaxlint]"
+
+    if name == "jaxlint.toml":
+        if has_root_jaxlint and has_tool_jaxlint:
+            msg = (
+                f"{path}: jaxlint.toml cannot contain both [jaxlint] and [tool.jaxlint]; "
+                "use only one section."
+            )
+            raise ValueError(msg)
+        if has_root_jaxlint:
+            native = data["jaxlint"]
+            if not isinstance(native, dict):
+                msg = f"{path}: [jaxlint] must be a table, got {type(native).__name__}"
+                raise ValueError(msg)
+            return native, "[jaxlint]"
+        if has_tool_jaxlint:
+            legacy = tool["jaxlint"]
+            if not isinstance(legacy, dict):
+                msg = (
+                    f"{path}: [tool.jaxlint] must be a table, "
+                    f"got {type(legacy).__name__}"
+                )
+                raise ValueError(msg)
+            return legacy, "[tool.jaxlint]"
+        return {}, "[jaxlint]"
+
+    msg = f"Config file must be named 'jaxlint.toml' or 'pyproject.toml' (got {name!r}): {path}"
+    raise ValueError(msg)
+
+
+def _lint_config_from_raw(raw: dict[str, Any], path: Path, *, section_label: str) -> LintConfig:
     sel = raw.get("select")
     ign = raw.get("ignore")
 
     so_raw = raw.get("severity-overrides")
     if so_raw is not None and not isinstance(so_raw, dict):
-        msg = f"{path}: [tool.jaxlint] severity-overrides must be a table, got {type(so_raw).__name__}"
+        msg = (
+            f"{path}: {section_label} severity-overrides must be a table, "
+            f"got {type(so_raw).__name__}"
+        )
         raise ValueError(msg)
-    severity_overrides = _parse_severity_overrides_table(so_raw or {}, path=path)
+    severity_overrides = _parse_severity_overrides_table(
+        so_raw or {}, path=path, section_label=section_label
+    )
 
     cfg = LintConfig(
         select=frozenset(sel) if sel else frozenset(),
@@ -135,6 +218,12 @@ def _parse_tool_jaxlint(path: Path) -> LintConfig:
         p = Path(str(cd_raw))
         cfg.cache_dir = p.resolve() if p.is_absolute() else (path.parent / p).resolve()
     return cfg
+
+
+def _parse_tool_jaxlint(path: Path) -> LintConfig:
+    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    raw, section_label = _resolve_lint_raw_table(path, data)
+    return _lint_config_from_raw(raw, path, section_label=section_label)
 
 
 def pattern_matches(rule_id: str, pattern: str) -> bool:
@@ -186,7 +275,7 @@ def rule_enabled(rule_id: str, cfg: LintConfig, file_path: Path) -> bool:
 
 
 def starter_toml_snippet() -> str:
-    return """[tool.jaxlint]
+    return """[jaxlint]
 # select = ["JL", "JD", "JM"]
 # ignore = ["JL005"]
 docstring-style = "numpy"
@@ -198,9 +287,9 @@ rubric-threshold = 0.75
 # cache-dir = ".jaxlint-cache"   # optional; resolved relative to the config file directory
 
 # Per-rule severity (after sensors); overrides strict-shapes / default rule severity.
-# [tool.jaxlint.severity-overrides]
+# [jaxlint.severity-overrides]
 # JL005 = "warning"
 
-# [tool.jaxlint.per-file-ignores]
+# [jaxlint.per-file-ignores]
 # "tests/**" = ["JL005"]
 """

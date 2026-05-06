@@ -14,7 +14,7 @@ HTML, PDF, and htmlzip builds are published via [Read the Docs](https://jaxlint.
 | Document | What it covers |
 |----------|----------------|
 | [CLI reference](cli.md) | Commands, flags, exit codes |
-| [Configuration](configuration.md) | `[tool.jaxlint]` in `pyproject.toml` |
+| [Configuration](configuration.md) | **`jaxlint.toml`** (`[jaxlint]` or legacy `[tool.jaxlint]`) and **`pyproject.toml`** (`[tool.jaxlint]`) |
 | [Library usage](library.md) | `run_checks`, diagnostics, formatting |
 | [Rule catalogue](rules.md) | Rule IDs, severity, fixtures |
 | [API reference](api.md) | Generated reference for `jaxlint.core` |

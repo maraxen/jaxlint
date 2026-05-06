@@ -79,6 +79,43 @@ def test_cache_invalidates_when_file_changes(tmp_path: Path) -> None:
     assert parses["n"] >= 1
 
 
+@pytest.mark.unit
+def test_canonical_cache_dict_native_vs_legacy_jaxlint_toml(tmp_path: Path) -> None:
+    from jaxlint.core.cache import _canonical_config_dict
+
+    n = tmp_path / "n" / "jaxlint.toml"
+    legacy_toml = tmp_path / "l" / "jaxlint.toml"
+    n.parent.mkdir(parents=True)
+    legacy_toml.parent.mkdir(parents=True)
+    n.write_text(
+        """
+[jaxlint]
+select = ["JL"]
+strict-shapes = true
+rubric-threshold = 0.6
+
+[jaxlint.severity-overrides]
+JL001 = "warning"
+""".strip(),
+        encoding="utf-8",
+    )
+    legacy_toml.write_text(
+        """
+[tool.jaxlint]
+select = ["JL"]
+strict-shapes = true
+rubric-threshold = 0.6
+
+[tool.jaxlint.severity-overrides]
+JL001 = "warning"
+""".strip(),
+        encoding="utf-8",
+    )
+    cn = load_config(n)
+    cl = load_config(legacy_toml)
+    assert _canonical_config_dict(cn) == _canonical_config_dict(cl)
+
+
 @pytest.mark.integration
 def test_cache_namespace_change_misses_cache(fixtures_dir: Path, tmp_path: Path) -> None:
     p = fixtures_dir / "jl002_short_jit.py"

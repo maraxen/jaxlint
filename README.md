@@ -30,7 +30,7 @@ Published builds (**HTML**, **PDF**, **htmlzip** per version):
 - `jaxlint doc [PATHS]...` — doc sections + MathJax only
 - `jaxlint score [PATHS]...` — rubric scores for docstrings (optional `--jsonl`, `--baseline`)
 - `jaxlint rules` — list rule IDs
-- `jaxlint init` — print a starter `[tool.jaxlint]` block
+- `jaxlint init` — print a starter `[jaxlint]` snippet for `jaxlint.toml`
 - `jaxlint hlo` — hints for optional `jaxlint.hlo` (requires `--extra hlo`)
 
 **Language server:** install **`jaxlint[lsp]`**, then run **`jaxlint-lsp`** or **`python -m jaxlint.lsp`** (stdio; diagnostics-only v1). See **[docs/lsp.md](docs/lsp.md)**.
@@ -53,7 +53,24 @@ The living plan (phased **near / medium / long-term**, plus what is already ship
 
 ## Configuration
 
-Add to `pyproject.toml`:
+In **`jaxlint.toml`** (recommended standalone manifest), use the native **`[jaxlint]`** table. In **`pyproject.toml`**, use **`[tool.jaxlint]`** only.
+
+**`jaxlint.toml`:**
+
+```toml
+[jaxlint]
+select = ["JL", "JD", "JM"]
+ignore = []
+docstring-style = "numpy"
+required-sections = ["Parameters", "Returns"]
+strict-shapes = false
+rubric-threshold = 0.75
+
+[jaxlint.per-file-ignores]
+"tests/**" = ["JL005"]
+```
+
+**`pyproject.toml`** (same keys under **`[tool.jaxlint]`**):
 
 ```toml
 [tool.jaxlint]

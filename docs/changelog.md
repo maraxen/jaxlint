@@ -16,6 +16,10 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 - **CLI:** `jaxlint check` and `jaxlint doc` accept **`--format rich`** (Rich table: severity, rule, location, message). Depends on explicit **`rich`** (see `pyproject.toml`).
 - **Docs:** Added this changelog (per [roadmap steering](roadmap.md)).
 
+## 0.3.1
+
+- **Configuration:** Native **`[jaxlint]`** table in **`jaxlint.toml`** (recommended). Legacy **`[tool.jaxlint]`** remains valid in **`jaxlint.toml`**; **both sections in the same file** is a **load-time error**. **`pyproject.toml`** uses **`[tool.jaxlint]`** only — a top-level **`[jaxlint]`** table is rejected. **`jaxlint init`** emits **`[jaxlint]`**. Equivalent native vs legacy **`jaxlint.toml`** yields identical **`LintConfig`** (disk cache **`CACHE_FORMAT_VERSION`** unchanged).
+
 ## 0.3.0
 
 - **Configuration:** Optional **`jaxlint.toml`** in each directory is preferred over **`pyproject.toml`** during upward discovery; both in the same directory is a **load-time error**. **`--config`** may point at a **`jaxlint.toml`** or **`pyproject.toml`** file (parse in place, no walk) or at a directory (walk). Relative **`cache-dir`** and other paths resolve against the **directory containing the loaded config file**.

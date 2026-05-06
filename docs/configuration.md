@@ -1,4 +1,4 @@
-# Configuration (`[tool.jaxlint]`)
+# Configuration (`jaxlint.toml` / `pyproject.toml`)
 
 jaxlint discovers optional settings by walking **upward** from a starting directory (`[root] + root.parents`):
 
@@ -8,11 +8,20 @@ jaxlint discovers optional settings by walking **upward** from a starting direct
 
 At each directory during the walk:
 
-1. If **`jaxlint.toml`** exists in that directory, parse **`[tool.jaxlint]`** from it and stop (**`pyproject.toml` in the same directory is not read**).
+1. If **`jaxlint.toml`** exists in that directory, parse configuration from it and stop (**`pyproject.toml` in the same directory is not read**).
 2. Else if **`pyproject.toml`** exists there, parse **`[tool.jaxlint]`** from it and stop.
 3. Else continue to the parent directory.
 
 If both **`jaxlint.toml`** and **`pyproject.toml`** exist in the **same** directory, loading fails with **`ValueError`** (pick one file).
+
+## Section layout by file
+
+| File | Sections |
+|------|----------|
+| **`jaxlint.toml`** | Native **`[jaxlint]`** (recommended) **or** legacy **`[tool.jaxlint]`**. **Do not use both** in the same file — loading fails with a clear error. |
+| **`pyproject.toml`** | **`[tool.jaxlint]`** only. A top-level **`[jaxlint]`** table is rejected — configure jaxlint under **`[tool.jaxlint]`** per PEP 621 tooling conventions. |
+
+Equivalent settings under **`[jaxlint]`** vs **`[tool.jaxlint]`** in **`jaxlint.toml`** produce the same parsed **`LintConfig`** (including disk cache fingerprints).
 
 Parsed keys live in `LintConfig` (`jaxlint.core.config`). TOML keys use **kebab-case**; Python attributes use **snake_case**.
 
@@ -42,37 +51,46 @@ Matching is implemented by `pattern_matches` in `jaxlint.core.config`:
 
 ## Examples
 
-**Doc-only rules in CI:**
+**Standalone config file (`jaxlint.toml`) — native table:**
+
+```toml
+[jaxlint]
+select = ["JD", "JM"]
+```
+
+**Project manifest (`pyproject.toml`) — PEP 621 tool table:**
 
 ```toml
 [tool.jaxlint]
 select = ["JD", "JM"]
 ```
 
-**Strict shape checks (JL005 as errors):**
+**Strict shape checks (JL005 as errors), native `jaxlint.toml`:**
 
 ```toml
-[tool.jaxlint]
+[jaxlint]
 strict-shapes = true
 ```
 
 **Downgrade JL005 to a warning even when `strict-shapes` is true** (override wins):
 
 ```toml
-[tool.jaxlint]
+[jaxlint]
 strict-shapes = true
 
-[tool.jaxlint.severity-overrides]
+[jaxlint.severity-overrides]
 JL005 = "warning"
 ```
+
+The same layout under **`[tool.jaxlint]`** / **`[tool.jaxlint.severity-overrides]`** remains valid in **`jaxlint.toml`** for backward compatibility.
 
 **Ignore JL005 everywhere except tune per directory:**
 
 ```toml
-[tool.jaxlint]
+[jaxlint]
 ignore = ["JL005"]
 
-[tool.jaxlint.per-file-ignores]
+[jaxlint.per-file-ignores]
 "experimental/**" = ["JL012"]
 "kernels/**/*.py" = ["JL005", "JL010"]
 ```
@@ -80,6 +98,6 @@ ignore = ["JL005"]
 **Custom section order for JD003:**
 
 ```toml
-[tool.jaxlint]
+[jaxlint]
 section-order = ["Parameters", "Returns", "Examples", "Raises"]
 ```

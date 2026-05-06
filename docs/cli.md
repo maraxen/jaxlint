@@ -23,7 +23,7 @@ Run performance (AST) sensors and, unless disabled, docstring sections + MathJax
 | `--select` | Comma-separated rule ID **prefixes**; overrides config `select`. |
 | `--ignore` | Comma-separated prefixes to ignore; overrides config `ignore`. |
 | `--jobs`, `-j` | Number of parallel workers over **files** (thread pool). Default: `min(32, CPU count)` (see `os.process_cpu_count()`). Use **`-j 1`** for a fully serial run (no pool). |
-| `--cache-dir` | Optional directory for an **on-disk cache** of per-file diagnostics (JSON). Speeds up repeated `check` runs when sources are unchanged. Overrides **`[tool.jaxlint] cache-dir`** when passed. Invalid or corrupt cache entries are ignored (fail-open). |
+| `--cache-dir` | Optional directory for an **on-disk cache** of per-file diagnostics (JSON). Speeds up repeated `check` runs when sources are unchanged. Overrides the config file’s **`cache-dir`** when passed (see [configuration](configuration.md)). Invalid or corrupt cache entries are ignored (fail-open). |
 
 **Exit code:** `1` if any diagnostic has severity `error`; otherwise `0`. Invalid `--format` exits **`2`** (same as `jaxlint hlo` when the HLO extra is missing).
 
@@ -49,7 +49,7 @@ Rubric scoring for docstrings (see `RubricScorer` in `jaxlint.core.doc.rubric_im
 | `PATHS...` | Python files to walk; default `.`. |
 | `--jsonl PATH` | Score entries from a JSONL file (see implementation for expected keys). |
 | `--baseline PATH` | With `--jsonl`, print mean/pass-rate comparison when the file exists. |
-| `--threshold FLOAT` | Override config `rubric-threshold` (default from `[tool.jaxlint]`). |
+| `--threshold FLOAT` | Override config `rubric-threshold` (default from lint config in `jaxlint.toml` / `pyproject.toml`). |
 | `--config` | As in `check`. |
 
 **Exit code:** `1` if any scored item is below the threshold (file mode or JSONL mode); `0` otherwise. Syntax errors in a scanned `.py` print a message and count as failure for the file-walk path.
@@ -60,7 +60,7 @@ Print TSV-style lines: rule id, severity, description. Always exits `0`.
 
 ## `jaxlint init`
 
-Print a starter `[tool.jaxlint]` TOML snippet to stdout. Exits `0`.
+Print a starter **`[jaxlint]`** TOML snippet (for **`jaxlint.toml`**) to stdout. Exits `0`.
 
 ## `jaxlint version`
 

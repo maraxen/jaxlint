@@ -25,7 +25,7 @@ from jaxlint.core.config import LintConfig, load_config
 ## Load configuration
 
 ```python
-cfg = load_config(Path("/your/project"))  # walks upward for pyproject.toml
+cfg = load_config(Path("/your/project"))  # walks upward for jaxlint.toml / pyproject.toml
 # or
 cfg = LintConfig.default()
 cfg = LintConfig(select=frozenset(["JL"]), strict_shapes=True)

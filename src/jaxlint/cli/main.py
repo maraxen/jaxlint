@@ -54,7 +54,10 @@ def check_cmd(
     cache_dir: Path | None = typer.Option(
         None,
         "--cache-dir",
-        help="Optional directory for on-disk diagnostic cache (overrides [tool.jaxlint] cache-dir)",
+        help=(
+            "Optional directory for on-disk diagnostic cache (overrides jaxlint.toml / pyproject "
+            "cache-dir)"
+        ),
     ),
 ) -> None:
     if not paths:

@@ -1,6 +1,6 @@
 # jaxlint rule catalogue
 
-Configure rules via `[tool.jaxlint]` (see [configuration.md](configuration.md)). Use `jaxlint rules` for the authoritative list bundled with your install.
+Configure rules via **`[jaxlint]`** / **`[tool.jaxlint]`** (see [configuration.md](configuration.md)). Use `jaxlint rules` for the authoritative list bundled with your install.
 
 ## Summary table
 

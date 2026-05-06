@@ -59,7 +59,7 @@ def test_cli_version() -> None:
 def test_cli_init_snippet() -> None:
     r = runner.invoke(app, ["init"])
     assert r.exit_code == 0
-    assert "[tool.jaxlint]" in r.output
+    assert "[jaxlint]" in r.output
     assert "docstring-style" in r.output
 
 
