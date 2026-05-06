@@ -84,7 +84,7 @@ Each phase has a **gate** (single objective question). Don't advance until the g
 - Add `.github/workflows/release.yml`:
   - Trigger: annotated tag matching `v*`.
   - Steps: checkout → setup uv → `python -m build` → `twine check dist/*` → publish via Trusted Publishing → attach sdist+wheel to a GitHub Release whose body is the matching `docs/changelog.md` section.
-- Cut `v0.1.0` (or `v0.4.2` under Option B). Confirm the wheel + sdist on PyPI install cleanly in a fresh venv.
+- Cut `v0.1.0a1` (pre-release alpha) or `v0.1.0` when stable, or `v0.4.2` under Option B. Confirm the wheel + sdist on PyPI install cleanly in a fresh venv.
 
 ### Phase R7 — OpenCode staging (post-publish, ≤ 1 day)
 
@@ -127,7 +127,7 @@ Move these into `docs/roadmap.md` as a new **"Release runway"** sprint section:
 | RR5 | LSP stdio subprocess smoke test (`@pytest.mark.lsp`) | R4 |
 | RR6 | `python -m build` + `twine check` + clean-venv install smoke (script + docs) | R4 |
 | RR7 | GitHub repo public, RTD project built once; `linkcheck_ignore` shrunk; canonical URLs table updated | R5 |
-| RR8 | `release.yml` with Trusted Publishing; `v0.1.0` (or `v0.4.2`) tag and first PyPI release | R6 |
+| RR8 | `release.yml` with Trusted Publishing; **`v0.1.0a1`** (alpha) or **`v0.1.0`** (stable) tag and first PyPI release | R6 |
 | RR9 | OpenCode staging transcript (MCP Inspector + LSP) attached to the release notes | R7 |
 
 Existing **Polish horizon** items remain post-RR9 work.

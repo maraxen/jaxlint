@@ -2,11 +2,14 @@
 
 Notable changes to jaxlint are listed here. Versions match the `version` field in [`pyproject.toml`](https://github.com/maraxen/jaxlint/blob/main/pyproject.toml) at release time.
 
-## 0.1.0
+## 0.1.0a1
 
+- **Pre-release (alpha):** **PEP 440** version **`0.1.0a1`** — first PyPI-oriented line still under **`Development Status :: 3 - Alpha`**. Use **`pip install --pre jaxlint`** or pin **`jaxlint==0.1.0a1`** until a stable **`0.1.0`**.
 - **License:** jaxlint is distributed under the **MIT License** (see repository `LICENSE`).
-- **Packaging / metadata:** PyPI runway — **`[project.urls]`**, Python **3.11** / **3.12** classifiers, **`Typing :: Typed`**, reconciled authors — and semver reset to **0.1.0** for the first PyPI-oriented release line.
-- **Historical numbering:** Sections labeled **0.3.x**–**0.4.x** below document development history prior to the **0.1.0** public-metadata reset; treat them as archival changelog sections, not distinct PyPI lines unless that version was already published.
+- **Packaging / metadata:** PyPI runway — **`[project.urls]`**, Python **3.11** / **3.12** classifiers, **`Typing :: Typed`**, reconciled authors — semver reset to the **0.1.x** pre-release line.
+- **Historical numbering:** Sections labeled **0.3.x**–**0.4.x** below document development history prior to the **0.1.x** public-metadata reset; treat them as archival changelog sections, not distinct PyPI lines unless that version was already published.
+- **Library / CLI:** Default **`-j`** / **`run_checks(..., jobs=None)`** uses **`os.process_cpu_count()`** on Python **3.13+** and falls back to **`os.cpu_count()`** on **3.11** / **3.12** (avoids **`AttributeError`** in CI and on older runtimes).
+- **Docs:** Sphinx **linkcheck** ignores the **OASIS SARIF** spec URL (often returns **403** to automated clients).
 
 ## 0.4.1
 
@@ -24,8 +27,6 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 
 ## Unreleased
 
-- **Library / CLI:** Default **`-j`** / **`run_checks(..., jobs=None)`** uses **`os.process_cpu_count()`** on Python **3.13+** and falls back to **`os.cpu_count()`** on **3.11** / **3.12** (avoids **`AttributeError`** in CI and on older runtimes).
-- **Docs:** Sphinx **linkcheck** ignores the **OASIS SARIF** spec URL (often returns **403** to automated clients).
 - **Docs / HLO:** [Goldens: mapping vs counts](hlo.md#goldens-mapping-vs-counts) explains **`get_operation_inventory`** vs **`get_source_mapping`** vs **`get_operations`**; [ADR 0001](adr/0001-hlo-diagnostics-feasibility.md) tracks Phase A feasibility before **`HLO*`** rules.
 - **LSP (optional):** **`jaxlint[lsp]`** adds a **diagnostics-only** language server (**stdio**, **full** document sync, **`file://`** URIs only). Entrypoints: **`jaxlint-lsp`**, **`python -m jaxlint.lsp`**. Uses **`load_config(path.parent)`** and **`diagnostics_for_python_source`** (no disk cache in the server path). See [Language server](lsp.md).
 - **Library:** **`diagnostics_for_python_source`** on **`jaxlint.core`** for path + source string (sorted diagnostics; cache-free).

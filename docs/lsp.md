@@ -27,7 +27,7 @@ Wire your editor to launch one of the above with **stdio** transport. There is n
 |----------|---------|---------|
 | **`JAXLINT_LSP_DEBOUNCE_MS`** | Milliseconds to debounce **`textDocument/didChange`** before running diagnostics on the buffer | **200**. Set to **`0`** to disable debounce and use the same sequential, immediate republish path as pre-debounce releases. |
 
-*No other **`JAXLINT_*`** environment variables are read by the server (as of **0.1.0**).*
+*No other **`JAXLINT_*`** environment variables are read by the server (as of **0.1.0a1**).*
 
 ### Lifecycle (not configurable via env)
 

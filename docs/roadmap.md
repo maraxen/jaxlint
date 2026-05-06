@@ -11,7 +11,7 @@ Packaging runway toward public **PyPI `jaxlint` `0.1.x`** (MIT license, metadata
 | ID | Deliverable | Phase | Status |
 |----|-------------|-------|--------|
 | RR1 | `[project.urls]` + Python 3.11/3.12 + `Typing :: Typed` classifiers; reconciled authors + MIT `LICENSE` | R1 | In progress |
-| RR2 | Version reset **0.1.0**; README / `docs/lsp.md` / changelog semver framing | R1 | In progress |
+| RR2 | Version reset **0.1.0a1** (pre-release alpha); README / `docs/lsp.md` / changelog semver framing | R1 | In progress |
 | RR3 | `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, issue + PR templates | R2 | In progress |
 | RR4 | Full pytest + coverage on every PR (`lint-test`) | R3 | Shipped |
 | RR5 | LSP subprocess smoke via **`jaxlint-lsp`** (`@pytest.mark.lsp`) | R4 | Shipped |
@@ -26,7 +26,7 @@ Packaging runway toward public **PyPI `jaxlint` `0.1.x`** (MIT license, metadata
 
 ## Shipped baseline (current release)
 
-This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.1.0**); treat that as the source of truth for semver, not an informal “v0.1” label.
+This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.1.0a1**); treat that as the source of truth for semver, not an informal “v0.1” label.
 
 Already in tree today:
 
