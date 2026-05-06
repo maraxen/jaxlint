@@ -8,6 +8,8 @@
 #   - .readthedocs.yml
 #   - README.md
 #
+# lint-test: every PR/push runs Ruff plus full pytest with coverage (same matrix as local release checks).
+#
 name: CI
 
 on:
@@ -36,21 +38,10 @@ jobs:
       - name: Ruff
         run: uv run ruff check src tests
 
-      - name: Smoke tests
-        run: uv run pytest -q -m smoke
-
-      - name: LSP tests
-        run: uv run pytest -q -m lsp
-
-      - name: MCP tests
-        run: uv run pytest -q -m mcp
-
-      - name: Full suite + coverage (main branch pushes only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - name: Tests + coverage
         run: uv run pytest -q --cov=jaxlint --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage.xml
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-xml-py${{ matrix.python-version }}

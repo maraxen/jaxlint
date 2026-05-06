@@ -30,6 +30,7 @@ Published builds (**HTML**, **PDF**, **htmlzip** per version):
 - `jaxlint doc [PATHS]...` — doc sections + MathJax only
 - `jaxlint score [PATHS]...` — rubric scores for docstrings (optional `--jsonl`, `--baseline`)
 - `jaxlint rules` — list rule IDs
+- `jaxlint version` — print package version
 - `jaxlint init` — print a starter `[jaxlint]` snippet for `jaxlint.toml`
 - `jaxlint hlo` — hints for optional `jaxlint.hlo` (requires `--extra hlo`)
 
@@ -38,14 +39,13 @@ Published builds (**HTML**, **PDF**, **htmlzip** per version):
 ## Testing
 
 ```bash
-uv sync --all-groups --extra docs --extra mcp
-uv run pytest -q -m smoke   # CI fast path
-uv run pytest -q -m mcp     # MCP server + tool helpers
-uv run pytest -q           # full suite
-uv run pytest -q --cov=jaxlint --cov-report=term-missing   # mirrors main-branch coverage step
+uv sync --all-groups --extra lsp --extra mcp --extra docs   # add --extra hlo when touching JAX/HLO
+uv run pytest -q --cov=jaxlint --cov-report=term-missing    # mirrors CI `lint-test` (full suite + coverage)
+uv run pytest -q -m mcp      # MCP server + tool helpers only
+uv run pytest -q -m lsp      # Language server tests only
 ```
 
-Markers include `smoke`, `unit`, `integration`, `slow`, and `needs_jax`. **Optional `jaxlint[mcp]`** installs the MCP SDK; run **`jaxlint-mcp`** or **`python -m jaxlint.mcp`** (stdio) for agent-facing tools, and **`pytest -q -m mcp`** when developing them. **`jaxlint_check`** defaults to the legacy behaviour (pretty-printed JSON array of diagnostics, or `error:` strings). Set **`structured=true`** for a **`jaxlint.mcp.v1`** envelope (`success`, `diagnostics`, optional `error`, `meta` with `elapsed_ms`, `paths_resolved`, and requested `jobs` / `cache_dir`). Path mode can pass **`jobs`** and **`cache_dir`** through to **`run_checks`** (same semantics as **`jaxlint check -j`** / **`--cache-dir`**); these options are rejected for in-memory **`source`** checks. **`jaxlint_capabilities`** returns JSON describing the schema version, package version, and tool metadata. See [docs/contributing.md](docs/contributing.md) for workflow details, coverage commands, and CI expectations.
+Markers include `smoke`, `unit`, `integration`, `slow`, `lsp`, `mcp`, and `needs_jax`. **Optional `jaxlint[mcp]`** installs the MCP SDK; run **`jaxlint-mcp`** or **`python -m jaxlint.mcp`** (stdio) for agent-facing tools: **`jaxlint_check`**, **`jaxlint_capabilities`**, **`jaxlint_rules`**, **`jaxlint_version`**. **`jaxlint_check`** defaults to the legacy behaviour (pretty-printed JSON array of diagnostics, or `error:` strings). Set **`structured=true`** for a **`jaxlint.mcp.v1`** envelope (`success`, `diagnostics`, optional `error`, `meta` with `elapsed_ms`, `paths_resolved`, and requested `jobs` / `cache_dir`). Path mode can pass **`jobs`** and **`cache_dir`** through to **`run_checks`** (same semantics as **`jaxlint check -j`** / **`--cache-dir`**); these options are rejected for in-memory **`source`** checks. **`jaxlint_capabilities`** returns JSON describing the schema version, package version, and tool metadata. See [docs/contributing.md](docs/contributing.md) for workflow details, coverage commands, and CI expectations.
 
 ## Roadmap
 

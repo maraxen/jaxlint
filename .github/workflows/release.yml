@@ -1,0 +1,39 @@
+# Publish wheels/sdist to PyPI from annotated version tags.
+#
+# Trusted Publishing (OIDC): on PyPI, add a pending publisher for project **jaxlint**
+# linked to GitHub repository **maraxen/jaxlint** (environment optional).
+#
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.12'
+
+      - name: Sync (build tooling)
+        run: uv sync --all-groups
+
+      - name: Build sdist and wheel
+        run: uv run python -m build
+
+      - name: Twine check
+        run: uv run twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # Trusted Publishing: PyPI project **jaxlint** ← GitHub **maraxen/jaxlint**

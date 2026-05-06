@@ -4,24 +4,36 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jaxlint"
-version = "0.4.1"
+version = "0.1.0"
 description = "CLI and library for JAX-oriented static checks, docstring quality, and optional HLO analysis"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
-authors = [{ name = "Marielle" }]
+license = { text = "MIT" }
+authors = [
+    { name = "Marielle Russo", email = "67157875+maraxen@users.noreply.github.com" },
+]
 keywords = ["jax", "lint", "docstring", "static-analysis"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Typing :: Typed",
 ]
 dependencies = [
     "griffe>=2.0.2",
     "rich>=13.0.0",
     "typer>=0.12.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/maraxen/jaxlint"
+Documentation = "https://jaxlint.readthedocs.io/"
+Repository = "https://github.com/maraxen/jaxlint"
+Issues = "https://github.com/maraxen/jaxlint/issues"
+Changelog = "https://jaxlint.readthedocs.io/en/latest/changelog.html"
 
 [project.optional-dependencies]
 docs = [
@@ -67,10 +79,12 @@ markers = [
 
 [dependency-groups]
 dev = [
+    "build>=1.2.0",
     "pytest>=8.0.0",
     "pytest-cov>=6.0.0",
     "pytest-timeout>=2.3.0",
     "ruff>=0.8.0",
+    "twine>=6.0.0",
 ]
 
 [tool.coverage.run]

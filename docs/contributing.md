@@ -19,16 +19,17 @@ uv run ruff check src tests
 
 | Command | Purpose |
 |---------|---------|
-| `uv run pytest -q -m smoke` | Fast PR-style checks Typer/import paths |
+| `uv run pytest -q -m smoke` | Fast Typer/import subset (`smoke` marker) |
 | `uv run pytest -q -m unit` | Config helpers, serializers, narrowly scoped logic |
 | `uv run pytest -q -m integration` | `run_checks` + CLI integration |
 | `uv run pytest -q` | Entire suite (includes optional skips) |
+| `uv run pytest -q --cov=jaxlint --cov-report=term-missing` | Same coverage gate as CI `lint-test` |
 | `uv run pytest -q -m mcp` | MCP tool helpers (`jaxlint[mcp]` required) |
-| `uv run pytest -q -m lsp` | Language server — run when touching **`jaxlint/lsp/`** (same marker as CI; install `jaxlint[lsp]`) |
+| `uv run pytest -q -m lsp` | Language server — run when touching **`jaxlint/lsp/`** (same marker as CI LSP tests; install `jaxlint[lsp]`) |
 
 `jax`-dependent checks use `@pytest.mark.needs_jax` and importorskip—they are skipped unless JAX is installed (for example via `uv sync --extra hlo`).
 
-- When you change code under **`jaxlint/lsp/`**, run **`uv run pytest -q -m lsp`** so local results match CI’s LSP job.
+- When you change code under **`jaxlint/lsp/`**, run **`uv run pytest -q -m lsp`** so local results match CI’s LSP-marked tests.
 
 **Language server (`jaxlint[lsp]`)** — install with `uv sync --all-groups --extra lsp` (or `--extra lsp` alone). LSP-marked tests cover convert helpers, in-memory runner parity, and stdio JSON-RPC integration. Remaining **non-blocking** follow-ups for v1 are listed under **Open TODOs (LSP v1 reviewer nits)** in [Roadmap — November 2026 LSP sprint](roadmap.md#open-todos-lsp-v1-reviewer-nits).
 
@@ -103,6 +104,23 @@ Open `htmlcov/index.html` locally after the run completes to browse annotated so
 
 [`pyproject.toml`](https://github.com/maraxen/jaxlint/blob/main/pyproject.toml) configures `[tool.coverage.run]` / `[tool.coverage.report]`, including a conservative **`fail_under`** guard for accidental regressions.
 
+## Release verification
+
+Before tagging a release, smoke-test artifacts the way consumers will install them:
+
+```bash
+uv sync --all-groups
+uv run python -m build
+uv run twine check dist/*
+rm -rf .release-venv && uv venv .release-venv && source .release-venv/bin/activate
+uv pip install "jaxlint[lsp,mcp]" --find-links dist --no-index --upgrade
+jaxlint version
+jaxlint-lsp --help
+jaxlint-mcp --help
+```
+
+Optional helper (same sequence): [`scripts/release_verify.sh`](../scripts/release_verify.sh).
+
 ## Continuous integration
 
-GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/maraxen/jaxlint/blob/main/.github/workflows/ci.yml)) runs Ruff plus smoke tests on every PR, **`pytest -m lsp`** and **`pytest -m mcp`** (with the optional extras installed), a dedicated **JAX / HLO** job that installs `jaxlint[hlo]` and runs `pytest -m needs_jax`, and (on pushes to `main` or `master`) a Sphinx HTML + linkcheck job. On **pull requests**, that docs job runs only when **docs-related paths** change (see the path-globs comment at the top of the workflow file).
+GitHub Actions (see [`.github/workflows/ci.yml`](https://github.com/maraxen/jaxlint/blob/main/.github/workflows/ci.yml)) runs **Ruff**, **full pytest with coverage** on every PR and push (`lint-test` matrix with **`uv sync --all-groups --extra lsp --extra mcp`**), a dedicated **JAX / HLO** job that installs `jaxlint[hlo]` and runs `pytest -m needs_jax`, and (on pushes to `main`/`master` or docs-touched PRs) Sphinx HTML + linkcheck. On **pull requests**, that docs job runs only when **docs-related paths** change (see the path-globs comment at the top of the workflow file).

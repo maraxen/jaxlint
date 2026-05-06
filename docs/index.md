@@ -22,6 +22,7 @@ HTML, PDF, and htmlzip builds are published via [Read the Docs](https://jaxlint.
 | [ADR 0001 — HLO diagnostics feasibility](adr/0001-hlo-diagnostics-feasibility.md) | Phase A metrics and kill criteria before **`HLO*`** rules |
 | [Language server](lsp.md) | Optional **`jaxlint[lsp]`** diagnostics-only LSP (stdio) |
 | [Roadmap](roadmap.md) | Phased product and technical direction |
+| [Release runway (notes)](runway.md) | Pre-publish packaging checklist (internal sprint artifact) |
 | [Changelog](changelog.md) | Release notes and unreleased doc/test changes |
 | [Contributing](contributing.md) | Tests, coverage, CI markers |
 
@@ -41,6 +42,7 @@ hlo
 adr/0001-hlo-diagnostics-feasibility
 lsp
 roadmap
+runway
 changelog
 contributing
 ```

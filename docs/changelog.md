@@ -2,6 +2,12 @@
 
 Notable changes to jaxlint are listed here. Versions match the `version` field in [`pyproject.toml`](https://github.com/maraxen/jaxlint/blob/main/pyproject.toml) at release time.
 
+## 0.1.0
+
+- **License:** jaxlint is distributed under the **MIT License** (see repository `LICENSE`).
+- **Packaging / metadata:** PyPI runway — **`[project.urls]`**, Python **3.11** / **3.12** classifiers, **`Typing :: Typed`**, reconciled authors — and semver reset to **0.1.0** for the first PyPI-oriented release line.
+- **Historical numbering:** Sections labeled **0.3.x**–**0.4.x** below document development history prior to the **0.1.0** public-metadata reset; treat them as archival changelog sections, not distinct PyPI lines unless that version was already published.
+
 ## 0.4.1
 
 - **SARIF:** Each run includes **`tool.driver.rules`**: one **reportingDescriptor** per **distinct** `ruleId` in **`results`**, ordered by first occurrence in **`Diagnostic.sort_key()`** order. Known ids use the built-in catalogue (**`shortDescription`**, **`defaultConfiguration.level`** = default rule severity). Unknown ids use **`shortDescription`** `"Unknown or custom rule"` and omit **`defaultConfiguration`**. Every **`result`** sets **`ruleIndex`** into that **`rules`** array. **`results[].level`** stays the **effective** severity (after **`severity-overrides`** and related logic); descriptor defaults document the catalogue only.
@@ -21,7 +27,7 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 - **Docs / HLO:** [Goldens: mapping vs counts](hlo.md#goldens-mapping-vs-counts) explains **`get_operation_inventory`** vs **`get_source_mapping`** vs **`get_operations`**; [ADR 0001](adr/0001-hlo-diagnostics-feasibility.md) tracks Phase A feasibility before **`HLO*`** rules.
 - **LSP (optional):** **`jaxlint[lsp]`** adds a **diagnostics-only** language server (**stdio**, **full** document sync, **`file://`** URIs only). Entrypoints: **`jaxlint-lsp`**, **`python -m jaxlint.lsp`**. Uses **`load_config(path.parent)`** and **`diagnostics_for_python_source`** (no disk cache in the server path). See [Language server](lsp.md).
 - **Library:** **`diagnostics_for_python_source`** on **`jaxlint.core`** for path + source string (sorted diagnostics; cache-free).
-- **CI:** PR **`lint-test`** syncs with **`--extra lsp`** / **`--extra mcp`** and runs **`pytest -m lsp`** and **`pytest -m mcp`**.
+- **CI:** PR **`lint-test`** syncs with **`--extra lsp`** / **`--extra mcp`** and runs **full pytest + coverage** (same gate as **main**).
 - **Docs / roadmap:** LSP sprint notes (**`jaxlint-sprint-2026-11`**) table aligned with plan IDs (**L01–L06**); formal outcome review **APPROVE-with-nits** (2026-05-05, no blocking DoD gaps). **Open TODOs** for non-blocking LSP v1 nits were closed in **0.2.2** (see [Roadmap](roadmap.md)).
 - **Performance / CLI:** Opt-in **disk cache** for **`jaxlint check`**: **`--cache-dir PATH`** and optional **`[tool.jaxlint] cache-dir`** (CLI wins when both are set). Cached entries are keyed by file identity (`mtime`/`size`), lint configuration fingerprint, and **`jaxlint` version**. Writes use atomic replace; POSIX uses **`flock`** on lock files next to cache blobs.
 - **CLI:** Invalid **`--jobs` / `-j`** values (for example **`-j 0`**) on **`jaxlint check`** now exit with code **2** and a clear message instead of an uncaught traceback.

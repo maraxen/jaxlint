@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import select
+import shutil
 import subprocess
 import sys
 import time
@@ -407,6 +408,93 @@ def test_lsp_debounce_coalesces_rapid_did_change(fixtures_dir: Path, tmp_path: P
         assert jd001_publish_events >= 1
         assert jd001_publish_events < num_changes
         assert jd001_publish_events <= 10
+    finally:
+        proc.stdin.close()
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+
+@pytest.mark.integration
+@pytest.mark.lsp
+def test_lsp_publish_diagnostics_via_console_script(
+    fixtures_dir: Path, tmp_path: Path
+) -> None:
+    """Smoke-test the ``jaxlint-lsp`` console script when present on PATH."""
+    pytest.importorskip("pygls")
+    exe = shutil.which("jaxlint-lsp")
+    if exe is None:
+        pytest.skip("jaxlint-lsp not on PATH (install editable package with [lsp] extra)")
+
+    src = (fixtures_dir / "jd001_missing_docstring.py").read_text(encoding="utf-8")
+    doc_path = tmp_path / "jd001_missing_docstring.py"
+    doc_path.write_text(src, encoding="utf-8")
+    uri = doc_path.resolve().as_uri()
+
+    proc = subprocess.Popen(
+        [exe],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=tmp_path,
+        text=False,
+        env=_LSP_ENV_NO_DEBOUNCE,
+    )
+    assert proc.stdin is not None and proc.stdout is not None
+
+    try:
+        _write_message(
+            proc.stdin,
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "processId": None,
+                    "rootUri": None,
+                    "capabilities": {},
+                    "clientInfo": {"name": "pytest-jaxlint", "version": "0"},
+                },
+            },
+        )
+        while True:
+            msg = _read_message(proc.stdout)
+            assert msg is not None
+            if msg.get("id") == 1:
+                break
+
+        _write_message(proc.stdin, {"jsonrpc": "2.0", "method": "initialized", "params": {}})
+
+        _write_message(
+            proc.stdin,
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {
+                    "textDocument": {
+                        "uri": uri,
+                        "languageId": "python",
+                        "version": 1,
+                        "text": src,
+                    }
+                },
+            },
+        )
+
+        found: list[str] = []
+        for _ in range(50):
+            msg = _read_message(proc.stdout)
+            assert msg is not None
+            if msg.get("method") == "textDocument/publishDiagnostics":
+                params = msg.get("params") or {}
+                for d in params.get("diagnostics") or []:
+                    code = d.get("code")
+                    if code is not None:
+                        found.append(str(code))
+                break
+        assert "JD001" in found
     finally:
         proc.stdin.close()
         proc.terminate()
