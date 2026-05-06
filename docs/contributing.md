@@ -24,10 +24,13 @@ uv run ruff check src tests
 | `uv run pytest -q -m integration` | `run_checks` + CLI integration |
 | `uv run pytest -q` | Entire suite (includes optional skips) |
 | `uv run pytest -q -m mcp` | MCP tool helpers (`jaxlint[mcp]` required) |
+| `uv run pytest -q -m lsp` | Language server — run when touching **`jaxlint/lsp/`** (same marker as CI; install `jaxlint[lsp]`) |
 
 `jax`-dependent checks use `@pytest.mark.needs_jax` and importorskip—they are skipped unless JAX is installed (for example via `uv sync --extra hlo`).
 
-**Language server (`jaxlint[lsp]`)** — install with `uv sync --all-groups --extra lsp` (or `--extra lsp` alone). CI and local runs use **`uv run pytest -q -m lsp`** for all LSP-marked tests (convert helpers, in-memory runner parity, and stdio JSON-RPC integration). Remaining **non-blocking** follow-ups for v1 are listed under **Open TODOs (LSP v1 reviewer nits)** in [Roadmap — November 2026 LSP sprint](roadmap.md#open-todos-lsp-v1-reviewer-nits).
+- When you change code under **`jaxlint/lsp/`**, run **`uv run pytest -q -m lsp`** so local results match CI’s LSP job.
+
+**Language server (`jaxlint[lsp]`)** — install with `uv sync --all-groups --extra lsp` (or `--extra lsp` alone). LSP-marked tests cover convert helpers, in-memory runner parity, and stdio JSON-RPC integration. Remaining **non-blocking** follow-ups for v1 are listed under **Open TODOs (LSP v1 reviewer nits)** in [Roadmap — November 2026 LSP sprint](roadmap.md#open-todos-lsp-v1-reviewer-nits).
 
 ### HLO golden fixtures
 

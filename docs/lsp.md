@@ -19,18 +19,34 @@ pip install 'jaxlint[lsp]'
 
 Wire your editor to launch one of the above with **stdio** transport. There is no TCP or socket mode in this release.
 
-## Behaviour (v1)
+## Environment & lifecycle
+
+### Environment variable
+
+| Variable | Meaning | Default |
+|----------|---------|---------|
+| **`JAXLINT_LSP_DEBOUNCE_MS`** | Milliseconds to debounce **`textDocument/didChange`** before running diagnostics on the buffer | **200**. Set to **`0`** to disable debounce and use the same sequential, immediate republish path as pre-debounce releases. |
+
+*No other **`JAXLINT_*`** environment variables are read by the server (as of **0.4.0**).*
+
+### Lifecycle (not configurable via env)
+
+| Topic | Behaviour |
+|-------|-----------|
+| **`textDocument/didOpen`** | Diagnostics run **immediately** (no debounce). |
+| **`textDocument/didChange`** | Debounced by **`JAXLINT_LSP_DEBOUNCE_MS`**; superseded runs are cancelled via a generation guard. |
+| **`textDocument/didClose`** | Publishes **empty diagnostics** for the URI and cancels any pending debounced work so editor squiggles clear. |
+| **URIs** | **`file://` only**; other schemes yield empty diagnostics (same as unsupported files). |
+
+## Diagnostics, sync, and configuration
 
 | Topic | Detail |
 |-------|--------|
 | **Diagnostics** | In-memory lint of the open buffer; results are published as LSP diagnostics. |
 | **Document sync** | **Full** text sync (`TextDocumentSyncKind.Full`). |
-| **`didClose`** | Publishes **empty diagnostics** for the closed URI so clients clear editor squiggles (same as non-Python / unsupported URIs). |
-| **URIs** | **`file://` only**; other schemes are ignored (empty diagnostics). |
 | **Configuration** | Resolved with **`load_config(path.parent)`** from the file path — same discovery as the CLI (**`jaxlint.toml`** then **`pyproject.toml`** in each ancestor; native **`[jaxlint]`** or legacy **`[tool.jaxlint]`** in **`jaxlint.toml`**, **`[tool.jaxlint]`** only in **`pyproject.toml`**). |
 | **Disk cache** | **Not used.** The LSP path calls **`diagnostics_for_python_source`** with explicit source text and a **`LintConfig`**; there is no cache read/write in the server. |
 | **CLI overrides** | There is **no** `--select` / `--ignore` equivalent in the server; rule selection comes from config only. |
-| **Debounce** | Server-side debounce for **`textDocument/didChange`** via environment variable **`JAXLINT_LSP_DEBOUNCE_MS`** (integer milliseconds, default **200**). Set to **`0`** to disable debounce and run the same sequential, immediate republish path as before. **`textDocument/didOpen`** is always immediate. |
 
 ## Library hook
 
