@@ -8,7 +8,7 @@ This page is the **canonical** roadmap. The README carries a short pointer so it
 
 ## Shipped baseline (current release)
 
-This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.3.2**); treat that as the source of truth for semver, not an informal “v0.1” label.
+This section tracks what is **in the repository today**. **Packaged releases** use the `version` in `pyproject.toml` (currently **0.4.0**); treat that as the source of truth for semver, not an informal “v0.1” label.
 
 Already in tree today:
 
@@ -25,7 +25,7 @@ Already in tree today:
 
 Focus: **integrations, ergonomics, and trust** without bloating `jaxlint.core`.
 
-1. **Output formats** — **Shipped:** GitHub annotation JSON, **SARIF** 2.1.0 (`--format sarif`), **`compact`** text, and **`rich`** (`--format rich`, table layout; explicit `rich` dependency). **Remaining:** optional further Rich polish (panels, links) if desired.
+1. **Output formats** — **Shipped:** GitHub annotation JSON, **SARIF** 2.1.0 (`--format sarif`), **`compact`** text, and **`rich`** (`--format rich`; explicit **`rich`** dependency). **Shipped (0.4.0):** Rich **panel** + **severity summary**, **`COLUMNS`** / terminal width / fallback **120**, optional **OSC 8** `file:` hyperlinks when stdout is a TTY and colors are on. **Remaining:** optional further polish if desired.
 2. **Hosted docs hygiene** — **`sphinx.fail_on_warning` is already on** in `.readthedocs.yml`. **Partial (July 2026):** **`curl -sI -L`** (2026-05-05) still returns **404** for `https://jaxlint.readthedocs.io/` and `https://github.com/jax-ml/jaxlint`; **`linkcheck_ignore`** stays until stable **200** (next review **2026-10-01**; see `docs/conf.py` comments).
 3. **CI parity** — **Shipped:** required **`jax-hlo`** job installs `jaxlint[hlo]` and runs `pytest -m needs_jax` (merge-blocking). PR **`lint-test`** jobs run smoke + Ruff + **`pytest -m lsp`** + **`pytest -m mcp`** (with **`uv sync --extra lsp --extra mcp`**); full suite + coverage on **`main`** only.
 4. **API reference** — **Shipped:** Sphinx **autodoc** / **autosummary** for `jaxlint.core` (and configuration types under `jaxlint.core.config`; see **`api`** in the docs toctree). **`jaxlint.hlo`** stays a narrative-only page (`hlo`) so JAX is not imported on RTD builders.

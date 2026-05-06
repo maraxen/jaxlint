@@ -2,6 +2,10 @@
 
 Notable changes to jaxlint are listed here. Versions match the `version` field in [`pyproject.toml`](https://github.com/jax-ml/jaxlint/blob/main/pyproject.toml) at release time.
 
+## 0.4.0
+
+- **CLI:** **`--format rich`** now wraps diagnostics in a **panel** with a **severity summary** line (`error=` / `warning=` / `info=` counts), configurable **width** via **`COLUMNS`**, terminal size when interactive, or **120** columns when stdout is not a TTY. **Location** may use **OSC 8** `file:` hyperlinks when stdout is a TTY and **`NO_COLOR`** is unset (plain text when piped or when colors are off). See [CLI](cli.md).
+
 ## 0.3.2
 
 - **LSP:** Server-side debounce and cancellation for **`textDocument/didChange`**: environment variable **`JAXLINT_LSP_DEBOUNCE_MS`** (default **200** ms; **`0`** disables debounce and restores the previous immediate, sequential behaviour). Per-file **canonical URI** state: cancel prior debounced **asyncio** work, **generation** guard so superseded runs do not publish, **`didClose`** invalidation and **empty** diagnostics, live buffer read in the **thread worker** after debounce. See [Language server](lsp.md).

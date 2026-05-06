@@ -179,6 +179,40 @@ def test_format_rich_includes_columns_and_rules(sample_diag: list[Diagnostic]) -
     assert "Severity" in out and "Rule" in out and "Location" in out and "Message" in out
     assert "JL001" in out and "JM003" in out
     assert "error" in out and "warning" in out
+    assert "error=2 warning=1 info=0" in out
+    assert "jaxlint" in out
+
+
+@pytest.mark.unit
+def test_format_rich_summary_counts_info_only(tmp_path: Path) -> None:
+    p = tmp_path / "x.py"
+    diags = [Diagnostic("JM001", Severity.INFO, "n", p, line=1, col=0)]
+    out = format_rich(diags)
+    assert "error=0 warning=0 info=1" in out
+
+
+@pytest.mark.unit
+def test_format_rich_hyperlink_osc8_when_tty(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """OSC8 hyperlinks only when stdout is a TTY and NO_COLOR is unset."""
+    p = tmp_path / "linked.py"
+    p.write_text("x\n", encoding="utf-8")
+    diags = [Diagnostic("JL001", Severity.ERROR, "m", p, line=1, col=0)]
+
+    monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setenv("COLUMNS", "120")
+    out = format_rich(diags)
+    assert "\x1b]8;;" in out
+    assert "linked.py" in out
+
+@pytest.mark.unit
+def test_format_rich_no_hyperlink_when_not_tty(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    p = tmp_path / "plain.py"
+    p.write_text("x\n", encoding="utf-8")
+    diags = [Diagnostic("JL001", Severity.ERROR, "m", p, line=1, col=0)]
+    monkeypatch.setattr("sys.stdout.isatty", lambda: False)
+    out = format_rich(diags)
+    assert "\x1b]8;;" not in out
 
 
 @pytest.mark.unit

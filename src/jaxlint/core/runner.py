@@ -5,11 +5,13 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from io import StringIO
+from io import StringIO, UnsupportedOperation
 from pathlib import Path
 
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
@@ -24,6 +26,30 @@ from jaxlint.core.sensors import perf_diagnostics_from_tree
 SARIF_SCHEMA_URI = (
     "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
 )
+
+_RICH_WIDTH_CAP = 200
+_RICH_WIDTH_MIN = 40
+_RICH_WIDTH_FALLBACK_NON_TTY = 120
+
+
+def _rich_console_width(*, is_tty: bool) -> int:
+    """Width for Rich output: valid ``COLUMNS`` env → terminal columns when TTY → fallback."""
+    raw = os.environ.get("COLUMNS")
+    if raw is not None:
+        try:
+            n = int(str(raw).strip())
+            if n >= _RICH_WIDTH_MIN:
+                return min(n, _RICH_WIDTH_CAP)
+        except ValueError:
+            pass
+    if is_tty:
+        try:
+            fd = sys.stdout.fileno()
+            cols = os.get_terminal_size(fd).columns
+            return min(max(cols, _RICH_WIDTH_MIN), _RICH_WIDTH_CAP)
+        except (OSError, ValueError, AttributeError, UnsupportedOperation):
+            pass
+    return _RICH_WIDTH_FALLBACK_NON_TTY
 
 
 def resolve_paths(paths: list[Path]) -> list[Path]:
@@ -167,18 +193,29 @@ def format_sarif(diagnostics: list[Diagnostic], *, tool_version: str) -> str:
     return json.dumps(payload, indent=2)
 
 
-def format_rich(diagnostics: list[Diagnostic]) -> str:
-    """Render diagnostics as a Rich table (plain ASCII when stdout is not a TTY)."""
+def _osc8_file_link(uri: str, label: str) -> str:
+    """OSC 8 hyperlink (terminal escapes); ``label`` is visible text."""
+    return f"\x1b]8;;{uri}\x1b\\{label}\x1b]8;;\x1b\\"
 
-    buf = StringIO()
+
+def format_rich(diagnostics: list[Diagnostic]) -> str:
+    """Render diagnostics as a Rich panel + table (ASCII-safe when stdout is not a TTY)."""
+
     tty = sys.stdout.isatty()
+
+    class _Out(StringIO):
+        def isatty(self) -> bool:
+            return tty
+
+    buf = _Out()
     color = tty and not os.environ.get("NO_COLOR", "").strip()
+    width = _rich_console_width(is_tty=tty)
     console = Console(
         file=buf,
         force_terminal=color,
         no_color=not color,
         highlight=False,
-        width=120,
+        width=width,
         soft_wrap=True,
         safe_box=not tty,
     )
@@ -186,6 +223,13 @@ def format_rich(diagnostics: list[Diagnostic]) -> str:
     if not diagnostics:
         console.print(Text("No diagnostics.", style="dim" if color else ""))
         return buf.getvalue()
+
+    counts = Counter(d.severity for d in diagnostics)
+    summary = (
+        f"error={counts[Severity.ERROR]} "
+        f"warning={counts[Severity.WARNING]} "
+        f"info={counts[Severity.INFO]}"
+    )
 
     table = Table(show_header=True, header_style="bold", expand=False)
     table.add_column("Severity", style=None, no_wrap=True, min_width=8)
@@ -200,12 +244,23 @@ def format_rich(diagnostics: list[Diagnostic]) -> str:
             return "yellow" if color else ""
         return "cyan" if color else ""
 
-    for d in sorted(diagnostics, key=lambda x: x.sort_key()):
-        loc = f"{d.path}:{d.line}:{d.col}"
-        sev_text = Text(d.severity.value, style=severity_style(d.severity))
-        table.add_row(sev_text, d.rule_id, loc, d.message)
+    use_link = tty and color
 
-    console.print(table)
+    for d in sorted(diagnostics, key=lambda x: x.sort_key()):
+        loc_plain = f"{d.path}:{d.line}:{d.col}"
+        if use_link:
+            try:
+                uri = d.path.resolve().as_uri()
+                loc_cell: Text | str = _osc8_file_link(uri, loc_plain)
+            except (OSError, ValueError):
+                loc_cell = loc_plain
+        else:
+            loc_cell = loc_plain
+
+        sev_text = Text(d.severity.value, style=severity_style(d.severity))
+        table.add_row(sev_text, d.rule_id, loc_cell, d.message)
+
+    console.print(Panel(table, title="jaxlint", subtitle=summary))
     return buf.getvalue()
 
 
