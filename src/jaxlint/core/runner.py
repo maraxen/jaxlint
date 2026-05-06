@@ -21,11 +21,16 @@ from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.doc.mathjax import mathjax_diagnostics
 from jaxlint.core.doc.sections import doc_diagnostics_from_source
 from jaxlint.core.parse_context import ParsedPythonFile, load_parsed_python_file, parse_python_source
+from jaxlint.core.rules import RULES
 from jaxlint.core.sensors import perf_diagnostics_from_tree
 
 SARIF_SCHEMA_URI = (
     "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
 )
+
+_RULE_CATALOGUE: dict[str, tuple[Severity, str]] = {
+    rule_id: (sev, desc) for rule_id, sev, desc in RULES
+}
 
 _RICH_WIDTH_CAP = 200
 _RICH_WIDTH_MIN = 40
@@ -134,7 +139,12 @@ def format_compact(diagnostics: list[Diagnostic]) -> str:
     return "\n".join(lines)
 
 
-def format_sarif(diagnostics: list[Diagnostic], *, tool_version: str) -> str:
+def format_sarif(
+    diagnostics: list[Diagnostic],
+    *,
+    tool_version: str,
+    cfg: LintConfig | None = None,
+) -> str:
     """Minimal SARIF 2.1.0 log (best-effort for generic viewers; not GHAS-specific)."""
 
     def sarif_level(sev: Severity) -> str:
@@ -147,8 +157,33 @@ def format_sarif(diagnostics: list[Diagnostic], *, tool_version: str) -> str:
     def one_based_col(c: int) -> int:
         return 1 if c <= 0 else c
 
+    sorted_diags = sorted(diagnostics, key=lambda x: x.sort_key())
+    ordered_rule_ids: list[str] = []
+    seen: set[str] = set()
+    for d in sorted_diags:
+        if d.rule_id not in seen:
+            seen.add(d.rule_id)
+            ordered_rule_ids.append(d.rule_id)
+    rule_id_to_index = {rid: i for i, rid in enumerate(ordered_rule_ids)}
+
+    docs_base = (cfg.sarif_rule_docs_base.rstrip("/") if cfg and cfg.sarif_rule_docs_base else None)
+
+    rules: list[dict] = []
+    for rid in ordered_rule_ids:
+        row: dict = {"id": rid}
+        cat = _RULE_CATALOGUE.get(rid)
+        if cat is not None:
+            _sev, short = cat
+            row["shortDescription"] = {"text": short}
+            row["defaultConfiguration"] = {"level": sarif_level(_sev)}
+        else:
+            row["shortDescription"] = {"text": "Unknown or custom rule"}
+        if docs_base is not None:
+            row["helpUri"] = f"{docs_base}/{rid}"
+        rules.append(row)
+
     results: list[dict] = []
-    for d in sorted(diagnostics, key=lambda x: x.sort_key()):
+    for d in sorted_diags:
         uri = d.path.resolve().as_uri()
         end_line = d.end_line if d.end_line is not None else d.line
         region: dict[str, int] = {"startLine": d.line, "endLine": end_line}
@@ -161,6 +196,7 @@ def format_sarif(diagnostics: list[Diagnostic], *, tool_version: str) -> str:
         results.append(
             {
                 "ruleId": d.rule_id,
+                "ruleIndex": rule_id_to_index[d.rule_id],
                 "level": sarif_level(d.severity),
                 "message": {"text": d.message},
                 "locations": [
@@ -174,18 +210,20 @@ def format_sarif(diagnostics: list[Diagnostic], *, tool_version: str) -> str:
             }
         )
 
+    driver: dict = {
+        "name": "jaxlint",
+        "version": tool_version,
+        "informationUri": "https://github.com/jax-ml/jaxlint",
+    }
+    if rules:
+        driver["rules"] = rules
+
     payload = {
         "$schema": SARIF_SCHEMA_URI,
         "version": "2.1.0",
         "runs": [
             {
-                "tool": {
-                    "driver": {
-                        "name": "jaxlint",
-                        "version": tool_version,
-                        "informationUri": "https://github.com/jax-ml/jaxlint",
-                    }
-                },
+                "tool": {"driver": driver},
                 "results": results,
             }
         ],
@@ -264,7 +302,15 @@ def format_rich(diagnostics: list[Diagnostic]) -> str:
     return buf.getvalue()
 
 
-def format_diagnostics(diagnostics: list[Diagnostic], format_name: str) -> str:
+def format_diagnostics(
+    diagnostics: list[Diagnostic], format_name: str, cfg: LintConfig | None = None
+) -> str:
+    """Format diagnostics for CLI / library use.
+
+    ``cfg`` is used when ``format_name`` is SARIF — pass the same `LintConfig`
+    as ``run_checks`` (or from ``load_config``) so optional ``sarif-rule-docs-base``
+    can populate ``helpUri`` on rule descriptors.
+    """
     fmt = format_name.strip().lower()
     if fmt == "text":
         return format_text(diagnostics)
@@ -277,7 +323,7 @@ def format_diagnostics(diagnostics: list[Diagnostic], format_name: str) -> str:
     if fmt in ("sarif", "sarif-2.1.0"):
         from jaxlint import __version__ as jaxlint_version
 
-        return format_sarif(diagnostics, tool_version=jaxlint_version)
+        return format_sarif(diagnostics, tool_version=jaxlint_version, cfg=cfg)
     if fmt == "rich":
         return format_rich(diagnostics)
     msg = f"Unknown --format {format_name!r} (expected text, compact, json, github, sarif, or rich)"

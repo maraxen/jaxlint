@@ -38,6 +38,7 @@ Parsed keys live in `LintConfig` (`jaxlint.core.config`). TOML keys use **kebab-
 | `rubric-threshold` | float | `0.75` | Default threshold for `jaxlint score`. |
 | `cache-dir` | string (path) | *(unset)* | Optional directory for caching **`jaxlint check`** diagnostics. Relative paths are resolved against the directory containing the loaded config file (`jaxlint.toml` or `pyproject.toml`). **`jaxlint check --cache-dir`** overrides this when the CLI flag is present. |
 | `severity-overrides` | table | `{}` | Map rule-id **patterns** → `error`, `warning`, or `info`. Applied **after** sensors (including **`strict-shapes`** for JL005) and **after** `select` / `ignore` / `per-file-ignores`. Pattern matching uses the same rules as `select` / `ignore` (`pattern_matches`). Keys must match at least one known rule id (unknown keys are rejected at parse time). Invalid severity strings are rejected at parse time. |
+| `sarif-rule-docs-base` | string (URL) | *(unset)* | When set, **`--format sarif`** includes a **`helpUri`** on each **`tool.driver.rules`** entry: the base URL (trailing `/` optional) plus **`/`** and the **`rule_id`**. Must be **`https://`**; empty strings and non-HTTPS URLs are rejected at parse time. |
 | `per-file-ignores` | table | `{}` | Map of **glob patterns** → rule patterns to disable for matching paths. |
 
 ### `select`, `ignore`, and `per-file-ignores` patterns

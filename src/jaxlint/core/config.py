@@ -34,6 +34,7 @@ class LintConfig:
     per_file_ignores: dict[str, tuple[str, ...]] = field(default_factory=dict)
     cache_dir: Path | None = None
     severity_overrides: dict[str, Severity] = field(default_factory=dict)
+    sarif_rule_docs_base: str | None = None
 
     @classmethod
     def default(cls) -> LintConfig:
@@ -184,6 +185,30 @@ def _resolve_lint_raw_table(path: Path, data: dict[str, Any]) -> tuple[dict[str,
     raise ValueError(msg)
 
 
+def _parse_sarif_rule_docs_base(
+    raw: object, *, path: Path, section_label: str
+) -> str | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, str):
+        msg = (
+            f"{path}: {section_label} sarif-rule-docs-base must be a string, "
+            f"got {type(raw).__name__}"
+        )
+        raise ValueError(msg)
+    s = raw.strip()
+    if not s:
+        msg = f"{path}: {section_label} sarif-rule-docs-base must not be empty when set"
+        raise ValueError(msg)
+    if not s.startswith("https://"):
+        msg = (
+            f"{path}: {section_label} sarif-rule-docs-base must be an https:// URL "
+            f"(got {raw!r})"
+        )
+        raise ValueError(msg)
+    return s
+
+
 def _lint_config_from_raw(raw: dict[str, Any], path: Path, *, section_label: str) -> LintConfig:
     sel = raw.get("select")
     ign = raw.get("ignore")
@@ -199,6 +224,11 @@ def _lint_config_from_raw(raw: dict[str, Any], path: Path, *, section_label: str
         so_raw or {}, path=path, section_label=section_label
     )
 
+    srdb_raw = raw.get("sarif-rule-docs-base")
+    sarif_rule_docs_base = _parse_sarif_rule_docs_base(
+        srdb_raw, path=path, section_label=section_label
+    )
+
     cfg = LintConfig(
         select=frozenset(sel) if sel else frozenset(),
         ignore=frozenset(ign) if ign else frozenset(),
@@ -208,6 +238,7 @@ def _lint_config_from_raw(raw: dict[str, Any], path: Path, *, section_label: str
         strict_shapes=bool(raw.get("strict-shapes", False)),
         rubric_threshold=float(raw.get("rubric-threshold", 0.75)),
         severity_overrides=severity_overrides,
+        sarif_rule_docs_base=sarif_rule_docs_base,
     )
 
     pf = raw.get("per-file-ignores") or {}
@@ -292,4 +323,7 @@ rubric-threshold = 0.75
 
 # [jaxlint.per-file-ignores]
 # "tests/**" = ["JL005"]
+
+# Optional SARIF help links: rule helpUri = base + "/" + rule_id (HTTPS only).
+# sarif-rule-docs-base = "https://example.com/docs/rules"
 """

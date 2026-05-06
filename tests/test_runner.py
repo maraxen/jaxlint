@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from jaxlint.core.config import LintConfig
 from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.runner import (
     SARIF_SCHEMA_URI,
@@ -49,6 +50,10 @@ def test_format_sarif_and_github_use_diagnostic_severity_info(tmp_path: Path) ->
     diags = [Diagnostic("JL002", Severity.INFO, "note", p, line=1, col=0)]
     sarif = json.loads(format_sarif(diags, tool_version="1"))
     assert sarif["runs"][0]["results"][0]["level"] == "note"
+    assert sarif["runs"][0]["results"][0]["ruleIndex"] == 0
+    rules = sarif["runs"][0]["tool"]["driver"]["rules"]
+    assert len(rules) == 1 and rules[0]["id"] == "JL002"
+    assert rules[0]["defaultConfiguration"]["level"] == "warning"
     gh = json.loads(format_github_annotations_json(diags))
     assert gh["annotations"][0]["annotation_level"] == "notice"
 
@@ -123,13 +128,24 @@ def test_format_sarif_structure_and_order(sample_diag: list[Diagnostic]) -> None
     assert payload["$schema"] == SARIF_SCHEMA_URI
     assert payload["version"] == "2.1.0"
     run = payload["runs"][0]
-    assert run["tool"]["driver"]["name"] == "jaxlint"
-    assert run["tool"]["driver"]["version"] == "9.9.9-test"
+    driver = run["tool"]["driver"]
+    assert driver["name"] == "jaxlint"
+    assert driver["version"] == "9.9.9-test"
+    rules = driver["rules"]
+    assert len(rules) == 2
+    assert rules[0]["id"] == "JL001"
+    assert rules[1]["id"] == "JM003"
+    assert rules[0]["defaultConfiguration"]["level"] == "error"
+    assert "helpUri" not in rules[0]
     results = run["results"]
     assert len(results) == 3
     assert results[0]["ruleId"] == "JL001"
+    assert results[0]["ruleIndex"] == 0
     assert results[0]["level"] == "error"
     assert results[0]["message"]["text"] == "col first"
+    assert results[1]["ruleIndex"] == 0
+    assert results[2]["ruleId"] == "JM003"
+    assert results[2]["ruleIndex"] == 1
     assert "uri" in results[0]["locations"][0]["physicalLocation"]["artifactLocation"]
     uri = results[0]["locations"][0]["physicalLocation"]["artifactLocation"]["uri"]
     assert uri.startswith("file:")
@@ -148,6 +164,77 @@ def test_format_sarif_multiline_region_omits_columns(tmp_path: Path) -> None:
     reg = payload["runs"][0]["results"][0]["locations"][0]["physicalLocation"]["region"]
     assert reg["startLine"] == 1 and reg["endLine"] == 3
     assert "startColumn" not in reg
+    assert payload["runs"][0]["results"][0]["ruleIndex"] == 0
+
+
+@pytest.mark.unit
+def test_format_sarif_empty_diagnostics_omits_rules_array() -> None:
+    payload = json.loads(format_sarif([], tool_version="1"))
+    assert "rules" not in payload["runs"][0]["tool"]["driver"]
+    assert payload["runs"][0]["results"] == []
+
+
+@pytest.mark.unit
+def test_format_sarif_unknown_rule_id_synthetic_descriptor(tmp_path: Path) -> None:
+    p = tmp_path / "x.py"
+    diags = [
+        Diagnostic("JL001", Severity.ERROR, "a", p, line=1, col=0),
+        Diagnostic("CUSTOM-X", Severity.WARNING, "b", p, line=2, col=0),
+    ]
+    payload = json.loads(format_sarif(diags, tool_version="1"))
+    rules = payload["runs"][0]["tool"]["driver"]["rules"]
+    assert len(rules) == 2
+    assert rules[0]["id"] == "JL001"
+    assert rules[1]["id"] == "CUSTOM-X"
+    assert rules[1]["shortDescription"]["text"] == "Unknown or custom rule"
+    assert "defaultConfiguration" not in rules[1]
+    res = payload["runs"][0]["results"]
+    assert res[0]["ruleIndex"] == 0 and res[1]["ruleIndex"] == 1
+
+
+@pytest.mark.unit
+def test_format_sarif_help_uri_from_config(tmp_path: Path) -> None:
+    p = tmp_path / "x.py"
+    diags = [Diagnostic("JL001", Severity.ERROR, "m", p, line=1, col=0)]
+    cfg = LintConfig(sarif_rule_docs_base="https://docs.example.com/rules")
+    payload = json.loads(format_sarif(diags, tool_version="1", cfg=cfg))
+    rule = payload["runs"][0]["tool"]["driver"]["rules"][0]
+    assert rule["helpUri"] == "https://docs.example.com/rules/JL001"
+
+
+@pytest.mark.unit
+def test_format_sarif_help_uri_strips_trailing_slash_on_base(tmp_path: Path) -> None:
+    p = tmp_path / "x.py"
+    diags = [Diagnostic("JL001", Severity.ERROR, "m", p, line=1, col=0)]
+    cfg = LintConfig(sarif_rule_docs_base="https://docs.example.com/rules/")
+    payload = json.loads(format_sarif(diags, tool_version="1", cfg=cfg))
+    assert (
+        payload["runs"][0]["tool"]["driver"]["rules"][0]["helpUri"]
+        == "https://docs.example.com/rules/JL001"
+    )
+
+
+@pytest.mark.unit
+def test_format_diagnostics_sarif_passes_cfg_to_format_sarif(tmp_path: Path) -> None:
+    p = tmp_path / "x.py"
+    diags = [Diagnostic("JL001", Severity.ERROR, "m", p, line=1, col=0)]
+    cfg = LintConfig(sarif_rule_docs_base="https://example.com/x")
+    out = format_diagnostics(diags, "sarif", cfg=cfg)
+    assert (
+        json.loads(out)["runs"][0]["tool"]["driver"]["rules"][0]["helpUri"]
+        == "https://example.com/x/JL001"
+    )
+
+
+@pytest.mark.unit
+def test_format_sarif_help_uri_config_from_replace(tmp_path: Path) -> None:
+    from dataclasses import replace
+
+    p = tmp_path / "x.py"
+    diags = [Diagnostic("JL001", Severity.ERROR, "m", p, line=1, col=0)]
+    cfg = replace(LintConfig.default(), sarif_rule_docs_base="https://h.example/r")
+    payload = json.loads(format_sarif(diags, tool_version="1", cfg=cfg))
+    assert payload["runs"][0]["tool"]["driver"]["rules"][0]["helpUri"] == "https://h.example/r/JL001"
 
 
 @pytest.mark.unit

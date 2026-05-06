@@ -126,6 +126,50 @@ def test_severity_overrides_invalid_severity_raises(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_load_sarif_rule_docs_base_https(tmp_path: Path) -> None:
+    p = tmp_path / "pyproject.toml"
+    p.write_text(
+        '[tool.jaxlint]\nsarif-rule-docs-base = "https://docs.example.com/rules"\n',
+        encoding="utf-8",
+    )
+    assert load_config(p).sarif_rule_docs_base == "https://docs.example.com/rules"
+
+
+@pytest.mark.unit
+def test_load_sarif_rule_docs_base_omitted_is_none(tmp_path: Path) -> None:
+    p = tmp_path / "pyproject.toml"
+    p.write_text("[tool.jaxlint]\nstrict-shapes = true\n", encoding="utf-8")
+    assert load_config(p).sarif_rule_docs_base is None
+
+
+@pytest.mark.unit
+def test_load_sarif_rule_docs_base_non_https_raises(tmp_path: Path) -> None:
+    p = tmp_path / "pyproject.toml"
+    p.write_text(
+        '[tool.jaxlint]\nsarif-rule-docs-base = "http://insecure.example/rules"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="https://"):
+        load_config(p)
+
+
+@pytest.mark.unit
+def test_load_sarif_rule_docs_base_empty_string_raises(tmp_path: Path) -> None:
+    p = tmp_path / "pyproject.toml"
+    p.write_text('[tool.jaxlint]\nsarif-rule-docs-base = ""\n', encoding="utf-8")
+    with pytest.raises(ValueError, match="must not be empty"):
+        load_config(p)
+
+
+@pytest.mark.unit
+def test_load_sarif_rule_docs_base_wrong_type_raises(tmp_path: Path) -> None:
+    p = tmp_path / "pyproject.toml"
+    p.write_text("[tool.jaxlint]\nsarif-rule-docs-base = 1\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="must be a string"):
+        load_config(p)
+
+
+@pytest.mark.unit
 def test_severity_overrides_unknown_rule_key_raises(tmp_path: Path) -> None:
     p = tmp_path / "pyproject.toml"
     p.write_text(

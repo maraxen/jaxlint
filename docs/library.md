@@ -72,13 +72,13 @@ print(format_text(diags))
 print(format_json(diags))
 print(format_github_annotations_json(diags))
 print(format_diagnostics(diags, "github"))  # same as format_github_annotations_json
-print(format_diagnostics(diags, "sarif"))
+print(format_diagnostics(diags, "sarif", cfg=cfg))  # cfg carries sarif-rule-docs-base from load_config
 print(format_diagnostics(diags, "compact"))
 ```
 
 `format_*` helpers sort again by the same key for display, so output stays deterministic even if you build a list manually.
 
-`format_diagnostics(diags, fmt)` accepts `text`, `compact`, `json`, `github` (alias: `github-annotations`), `sarif` (alias: `sarif-2.1.0`) and raises `ValueError` on unknown `fmt`.
+`format_diagnostics(diags, fmt, cfg=None)` accepts `text`, `compact`, `json`, `github` (alias: `github-annotations`), `sarif` (alias: `sarif-2.1.0`) and raises `ValueError` on unknown `fmt`. For **`sarif`**, pass **`cfg`** when you need **`helpUri`** from **`sarif-rule-docs-base`** (same object you pass to **`run_checks`** or from **`load_config`**). **`format_sarif(diags, tool_version=..., cfg=...)`** uses **`cfg`** the same way.
 
 ## Rule catalogue
 

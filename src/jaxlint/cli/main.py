@@ -81,7 +81,7 @@ def check_cmd(
             jobs=jobs,
             cache_dir=effective_cache,
         )
-        typer.echo(format_diagnostics(diags, format_))
+        typer.echo(format_diagnostics(diags, format_, cfg=cfg))
     except ValueError as e:
         typer.echo(str(e), err=True)
         raise typer.Exit(2) from e
@@ -112,7 +112,7 @@ def doc_cmd(
         cfg = replace(cfg, ignore=frozenset(s.strip() for s in ignore.split(",") if s.strip()))
     diags = run_checks(paths, cfg=cfg, perf=False, doc=True, mathjx=True, config_start=run_anchor)
     try:
-        typer.echo(format_diagnostics(diags, format_))
+        typer.echo(format_diagnostics(diags, format_, cfg=cfg))
     except ValueError as e:
         typer.echo(str(e), err=True)
         raise typer.Exit(2) from e
