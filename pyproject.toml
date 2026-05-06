@@ -64,6 +64,15 @@ packages = ["src/jaxlint"]
 line-length = 100
 target-version = "py311"
 
+# Astral ty — static typing (https://docs.astral.sh/ty/). CI runs `ty check` on `src/` only.
+[tool.ty.environment]
+python-version = "3.11"
+python = ".venv"
+
+[tool.ty.src]
+include = ["src"]
+respect-ignore-files = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 timeout_func_only = true
@@ -85,6 +94,7 @@ dev = [
     "pytest-timeout>=2.3.0",
     "ruff>=0.8.0",
     "twine>=6.0.0",
+    "ty>=0.0.34",
 ]
 
 [tool.coverage.run]

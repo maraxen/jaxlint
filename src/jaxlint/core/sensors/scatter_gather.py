@@ -31,11 +31,23 @@ class ScatterGatherVisitor(ast.NodeVisitor):
             and node.func.value.value.attr == "at"
         )
 
-    def _at_set_base(self, node: ast.Call) -> str | None:
-        try:
-            return node.func.value.value.value.id  # type: ignore[attr-defined]
-        except AttributeError:
+    def _at_set_base(self, node: ast.expr) -> str | None:
+        """Recover base name from ``x.at[...].set(...)`` (aligned with `_is_at_set`)."""
+        if not isinstance(node, ast.Call):
             return None
+        func = node.func
+        if not isinstance(func, ast.Attribute) or func.attr != "set":
+            return None
+        sub = func.value
+        if not isinstance(sub, ast.Subscript):
+            return None
+        at_chain = sub.value
+        if not isinstance(at_chain, ast.Attribute) or at_chain.attr != "at":
+            return None
+        base = at_chain.value
+        if isinstance(base, ast.Name):
+            return base.id
+        return None
 
     def visit_Module(self, node: ast.Module) -> None:
         self._tag_parent_bodies(node)

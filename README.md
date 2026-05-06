@@ -45,6 +45,8 @@ uv run pytest -q -m mcp      # MCP server + tool helpers only
 uv run pytest -q -m lsp      # Language server tests only
 ```
 
+CI also runs **`uv run ty check`** on **`src/`** ([Astral ty](https://docs.astral.sh/ty/); config in **`[tool.ty]`** — see [docs/contributing.md](docs/contributing.md)).
+
 Markers include `smoke`, `unit`, `integration`, `slow`, `lsp`, `mcp`, and `needs_jax`. **Optional `jaxlint[mcp]`** installs the MCP SDK; run **`jaxlint-mcp`** or **`python -m jaxlint.mcp`** (stdio) for agent-facing tools: **`jaxlint_check`**, **`jaxlint_capabilities`**, **`jaxlint_rules`**, **`jaxlint_version`**. **`jaxlint_check`** defaults to the legacy behaviour (pretty-printed JSON array of diagnostics, or `error:` strings). Set **`structured=true`** for a **`jaxlint.mcp.v1`** envelope (`success`, `diagnostics`, optional `error`, `meta` with `elapsed_ms`, `paths_resolved`, and requested `jobs` / `cache_dir`). Path mode can pass **`jobs`** and **`cache_dir`** through to **`run_checks`** (same semantics as **`jaxlint check -j`** / **`--cache-dir`**); these options are rejected for in-memory **`source`** checks. **`jaxlint_capabilities`** returns JSON describing the schema version, package version, and tool metadata. See [docs/contributing.md](docs/contributing.md) for workflow details, coverage commands, and CI expectations.
 
 ## Roadmap

@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
+from typing import Any, Literal, Optional, cast
 
 from griffe import Docstring
 
 logger = logging.getLogger(__name__)
+
+_ParseStyle = Literal["google", "numpy", "sphinx", "auto"]
 
 
 class StyleValidator:
@@ -30,11 +32,11 @@ class StyleValidator:
             text = self._normalize_spacing(docstring_text)
             doc = Docstring(text)
 
-            parser_style = style
+            parser_style: str | _ParseStyle = style
             if style in ("optax", "sphinx"):
                 parser_style = "sphinx" if ":param" in text else "google"
 
-            sections_parsed = doc.parse(parser_style)
+            sections_parsed = doc.parse(cast(Optional[_ParseStyle], parser_style))
 
             found_sections: list[str] = []
             for section in sections_parsed:
@@ -61,12 +63,12 @@ class StyleValidator:
 
         try:
             text = self._normalize_spacing(docstring_text)
-            parser_style = "google" if style in ("sphinx", "optax") else style
+            parser_style: str | _ParseStyle = "google" if style in ("sphinx", "optax") else style
             if style == "sphinx" and ":param" in text:
                 parser_style = "sphinx"
 
             doc = Docstring(text)
-            sections_parsed = doc.parse(parser_style)
+            sections_parsed = doc.parse(cast(Optional[_ParseStyle], parser_style))
 
             for section in sections_parsed:
                 if section.kind.value == "text":
