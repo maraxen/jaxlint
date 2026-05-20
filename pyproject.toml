@@ -60,6 +60,9 @@ jaxlint-mcp = "jaxlint.mcp.__main__:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/jaxlint"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"agent_assets" = "jaxlint/agent_assets"
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
