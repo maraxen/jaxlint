@@ -205,7 +205,7 @@ Note: `eqx.Module, ABC` multiple inheritance works correctly. The integrator loo
 
 ---
 
-## SECTION 7: Pattern 7 — StageSet / Bundle / Plan (resolve-once) (HIGH COMMITMENT)
+## SECTION 6: Pattern 6 — StageSet / Bundle / Plan (resolve-once) (HIGH COMMITMENT)
 
 For inference pipelines with multiple interchangeable components, bundle resolved implementations once and reuse.
 
