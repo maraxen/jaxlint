@@ -152,7 +152,7 @@ def export_skill(
         if fm_match:
             insert_at = fm_match.end()
             # Ensure we're after the newline that closes ---
-            content = content[:insert_at] + "\n" + stamp + content[insert_at:]
+            content = content[:insert_at] + "\n" + stamp + content[insert_at:].lstrip("\n") + "\n"
         else:
             content = stamp + content
 

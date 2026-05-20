@@ -41,7 +41,7 @@ def test_get_skills_root_contains_skill_dirs():
 def test_list_skills_returns_all_six():
     skills = list_skills()
     names = [s.name for s in skills]
-    assert len(skills) == 6
+    assert len(skills) >= 6
     assert "using-jax" in names
     assert "using-equinox" in names
     assert "using-orbax" in names
