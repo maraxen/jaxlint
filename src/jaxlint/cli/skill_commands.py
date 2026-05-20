@@ -94,7 +94,7 @@ def export_cmd(
                 target = resolve_target(skill.name, tool=tool, level=level)
             result = export_skill(skill.name, target=target, dry_run=dry_run)
             prefix = "Dry run — would export" if dry_run else "Exported"
-            typer.echo(f"{prefix} {skill.name!r:40} → {result.target}")
+            typer.echo(f"{prefix} {skill.name:<40} → {result.target}")
         except ExportError as e:
             typer.echo(f"Error exporting {skill.name!r}: {e}", err=True)
             errors.append(skill.name)
@@ -106,6 +106,8 @@ def export_cmd(
             typer.echo(f"{prefix} jaxlint-mcp in {cfg}")
         except ExportError as e:
             typer.echo(f"Warning: MCP registration failed: {e}", err=True)
+    elif errors and not no_mcp:
+        typer.echo("Skipping MCP registration due to export errors.", err=True)
 
     if errors:
         raise typer.Exit(1)

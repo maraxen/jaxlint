@@ -5,7 +5,9 @@ import json
 from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
 
+from jaxlint.cli.main import app as main_app
 from jaxlint.skills.export import (
     ExportError,
     ExportResult,
@@ -184,8 +186,6 @@ def test_register_mcp_gemini_writes_settings(tmp_path):
 # ---------------------------------------------------------------------------
 # CLI tests
 # ---------------------------------------------------------------------------
-from typer.testing import CliRunner
-from jaxlint.cli.main import app as main_app
 
 runner = CliRunner()
 
@@ -204,8 +204,7 @@ def test_skill_list_shows_descriptions():
     assert "Use when" in result.output
 
 
-def test_skill_export_dry_run(tmp_path, monkeypatch):
-    monkeypatch.setenv("JAXLINT_SKILL_TARGET_OVERRIDE", str(tmp_path))
+def test_skill_export_dry_run():
     result = runner.invoke(
         main_app,
         ["skill", "export", "using-jax", "--tool", "claude", "--level", "user", "--dry-run"],
@@ -230,7 +229,7 @@ def test_skill_export_unknown_skill_exits_nonzero():
         main_app,
         ["skill", "export", "nonexistent-skill", "--tool", "claude", "--level", "user"],
     )
-    assert result.exit_code != 0
+    assert result.exit_code == 1
 
 
 def test_skill_export_writes_file(tmp_path):
