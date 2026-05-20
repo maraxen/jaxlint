@@ -179,3 +179,70 @@ def test_register_mcp_gemini_writes_settings(tmp_path):
     data = json.loads(cfg.read_text())
     assert "mcpServers" in data
     assert "jaxlint" in data["mcpServers"]
+
+
+# ---------------------------------------------------------------------------
+# CLI tests
+# ---------------------------------------------------------------------------
+from typer.testing import CliRunner
+from jaxlint.cli.main import app as main_app
+
+runner = CliRunner()
+
+
+def test_skill_list_command():
+    result = runner.invoke(main_app, ["skill", "list"])
+    assert result.exit_code == 0
+    assert "using-jax" in result.output
+    assert "using-equinox" in result.output
+
+
+def test_skill_list_shows_descriptions():
+    result = runner.invoke(main_app, ["skill", "list"])
+    assert result.exit_code == 0
+    # Each skill should have a non-empty description shown
+    assert "Use when" in result.output
+
+
+def test_skill_export_dry_run(tmp_path, monkeypatch):
+    monkeypatch.setenv("JAXLINT_SKILL_TARGET_OVERRIDE", str(tmp_path))
+    result = runner.invoke(
+        main_app,
+        ["skill", "export", "using-jax", "--tool", "claude", "--level", "user", "--dry-run"],
+    )
+    assert result.exit_code == 0
+    assert "Dry run" in result.output or "dry-run" in result.output.lower()
+
+
+def test_skill_export_all_dry_run():
+    result = runner.invoke(
+        main_app,
+        ["skill", "export", "--all", "--tool", "claude", "--level", "user", "--dry-run"],
+    )
+    assert result.exit_code == 0
+    # Should mention all 6 skills
+    assert "using-jax" in result.output
+    assert "exporting-jax" in result.output
+
+
+def test_skill_export_unknown_skill_exits_nonzero():
+    result = runner.invoke(
+        main_app,
+        ["skill", "export", "nonexistent-skill", "--tool", "claude", "--level", "user"],
+    )
+    assert result.exit_code != 0
+
+
+def test_skill_export_writes_file(tmp_path):
+    target = tmp_path / "using-jax" / "SKILL.md"
+    result = runner.invoke(
+        main_app,
+        [
+            "skill", "export", "using-jax",
+            "--tool", "claude", "--level", "user",
+            "--target-dir", str(tmp_path),
+            "--no-mcp",
+        ],
+    )
+    assert result.exit_code == 0
+    assert target.exists()
