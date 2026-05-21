@@ -16,6 +16,7 @@ from jaxlint.skills.export import (
     get_skills_root,
     list_skills,
     register_mcp,
+    register_mcp_claude_code,
     resolve_target,
 )
 
@@ -245,3 +246,76 @@ def test_skill_export_writes_file(tmp_path):
     )
     assert result.exit_code == 0
     assert target.exists()
+
+
+# ---------------------------------------------------------------------------
+# register_mcp_claude_code
+# ---------------------------------------------------------------------------
+
+def test_register_mcp_claude_code_subprocess_success(monkeypatch):
+    """subprocess success: calls 'claude mcp add jaxlint <cmd>', returns claude path."""
+    import subprocess
+
+    mcp_calls = []
+
+    def mock_run(args, **kwargs):
+        mcp_calls.append(args)
+        return subprocess.CompletedProcess(args=args, returncode=0)
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+
+    result = register_mcp_claude_code(dry_run=False)
+
+    assert len(mcp_calls) == 1
+    assert mcp_calls[0][0:4] == ["claude", "mcp", "add", "jaxlint"]
+    assert isinstance(result, Path)
+    assert "claude" in str(result).lower() or result == Path("claude")
+
+
+def test_register_mcp_claude_code_subprocess_error_falls_back(monkeypatch, tmp_path):
+    """CalledProcessError triggers fallback to register_mcp(tool='claude')."""
+    import subprocess
+
+    fallback_calls = []
+
+    def mock_run(args, **kwargs):
+        raise subprocess.CalledProcessError(1, args)
+
+    def mock_register_mcp(**kwargs):
+        fallback_calls.append(kwargs)
+        return tmp_path / ".claude.json"
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+    monkeypatch.setattr("jaxlint.skills.export.register_mcp", mock_register_mcp)
+
+    result = register_mcp_claude_code(dry_run=False)
+
+    assert len(fallback_calls) == 1
+    assert fallback_calls[0]["tool"] == "claude"
+    assert fallback_calls[0]["level"] == "user"
+    assert fallback_calls[0]["dry_run"] == False
+    assert fallback_calls[0].get("_config_override") is None
+    assert result == tmp_path / ".claude.json"
+
+
+def test_register_mcp_claude_code_subprocess_absent_falls_back(monkeypatch, tmp_path):
+    """FileNotFoundError (claude not on PATH) triggers fallback to register_mcp."""
+    import subprocess
+
+    fallback_calls = []
+
+    def mock_run(args, **kwargs):
+        raise FileNotFoundError("claude: not found")
+
+    def mock_register_mcp(**kwargs):
+        fallback_calls.append(kwargs)
+        return tmp_path / ".claude.json"
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+    monkeypatch.setattr("jaxlint.skills.export.register_mcp", mock_register_mcp)
+
+    result = register_mcp_claude_code(dry_run=False)
+
+    assert len(fallback_calls) == 1
+    assert fallback_calls[0]["tool"] == "claude"
+    assert result == tmp_path / ".claude.json"

@@ -201,3 +201,43 @@ def register_mcp(
         cfg_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
     return cfg_path
+
+
+def register_mcp_claude_code(
+    *,
+    dry_run: bool,
+    _config_override: Path | None = None,
+) -> Path:
+    """Register jaxlint-mcp via `claude mcp add jaxlint <cmd>`.
+
+    When dry_run=True, returns the claude binary path without invoking subprocess.
+    When dry_run=False, calls `claude mcp add jaxlint <cmd>` via subprocess.
+    On FileNotFoundError or CalledProcessError, falls back to register_mcp(tool="claude")
+    which merges into ~/.claude.json using the existing merge logic.
+
+    Returns the claude binary path on success, or the fallback config path on failure.
+    """
+    import subprocess
+
+    mcp_cmd = shutil.which("jaxlint-mcp") or "uv run --with jaxlint jaxlint-mcp"
+
+    # dry_run: subprocess is never called; fallback is unreachable
+    if dry_run:
+        return Path(shutil.which("claude") or "claude")
+
+    try:
+        subprocess.run(
+            ["claude", "mcp", "add", "jaxlint", mcp_cmd],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return Path(shutil.which("claude") or "claude")
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        # Delegate to existing merge logic — avoids duplicating the JSON write
+        return register_mcp(
+            tool="claude",
+            level="user",
+            dry_run=False,
+            _config_override=_config_override,
+        )
