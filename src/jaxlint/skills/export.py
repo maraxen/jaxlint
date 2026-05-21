@@ -37,6 +37,21 @@ _GEMINI_MCP_CONFIG: dict[str, Path] = {
 }
 
 
+_UV_TOOL_MCP = Path.home() / ".local" / "bin" / "jaxlint-mcp"
+
+
+def _mcp_cmd() -> str:
+    """Return the most-stable jaxlint-mcp command path.
+
+    Prefers the uv-tool install at ~/.local/bin so MCP configs remain valid
+    outside this project's venv.
+    """
+    if _UV_TOOL_MCP.exists():
+        return str(_UV_TOOL_MCP)
+    found = shutil.which("jaxlint-mcp")
+    return found or "uv run --with jaxlint jaxlint-mcp"
+
+
 class ExportError(Exception):
     """Raised when skill export fails."""
 
@@ -186,7 +201,7 @@ def register_mcp(
     cfg_path = _config_override if _config_override is not None else cfg_paths[level]
 
     # Resolve jaxlint-mcp command
-    mcp_cmd = shutil.which("jaxlint-mcp") or "uv run --with jaxlint jaxlint-mcp"
+    mcp_cmd = _mcp_cmd()
     entry = {"command": mcp_cmd}
 
     if not dry_run:
@@ -219,7 +234,7 @@ def register_mcp_claude_code(
     """
     import subprocess
 
-    mcp_cmd = shutil.which("jaxlint-mcp") or "uv run --with jaxlint jaxlint-mcp"
+    mcp_cmd = _mcp_cmd()
 
     # dry_run: subprocess is never called; fallback is unreachable
     if dry_run:
@@ -256,7 +271,7 @@ def register_mcp_cursor(
     Returns the config path (written or would-be-written).
     """
     cfg_path = _config_override if _config_override is not None else Path(".cursor") / "mcp.json"
-    mcp_cmd = shutil.which("jaxlint-mcp") or "uv run --with jaxlint jaxlint-mcp"
+    mcp_cmd = _mcp_cmd()
 
     if not dry_run:
         cfg_path.parent.mkdir(parents=True, exist_ok=True)
