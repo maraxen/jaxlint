@@ -17,6 +17,7 @@ from jaxlint.skills.export import (
     list_skills,
     register_mcp,
     register_mcp_claude_code,
+    register_mcp_cursor,
     resolve_target,
 )
 
@@ -319,3 +320,46 @@ def test_register_mcp_claude_code_subprocess_absent_falls_back(monkeypatch, tmp_
     assert len(fallback_calls) == 1
     assert fallback_calls[0]["tool"] == "claude"
     assert result == tmp_path / ".claude.json"
+
+
+# ---------------------------------------------------------------------------
+# register_mcp_cursor
+# ---------------------------------------------------------------------------
+
+def test_register_mcp_cursor_dry_run(tmp_path):
+    """dry_run=True returns path without writing."""
+    cfg = tmp_path / ".mcp.json"
+    result = register_mcp_cursor(dry_run=True, _config_override=cfg)
+    assert result == cfg
+    assert not cfg.exists()
+
+
+def test_register_mcp_cursor_writes_config(tmp_path):
+    """dry_run=False writes .mcp.json with mcpServers.jaxlint entry."""
+    cfg = tmp_path / ".mcp.json"
+    result = register_mcp_cursor(dry_run=False, _config_override=cfg)
+    assert result == cfg
+    assert cfg.exists()
+    data = json.loads(cfg.read_text())
+    assert "mcpServers" in data
+    assert "jaxlint" in data["mcpServers"]
+    assert "command" in data["mcpServers"]["jaxlint"]
+
+
+def test_register_mcp_cursor_merges_existing(tmp_path):
+    """Preserves existing mcpServers entries."""
+    cfg = tmp_path / ".mcp.json"
+    cfg.write_text(json.dumps({"mcpServers": {"other": {"command": "cmd"}}}))
+    register_mcp_cursor(dry_run=False, _config_override=cfg)
+    data = json.loads(cfg.read_text())
+    assert "other" in data["mcpServers"]
+    assert "jaxlint" in data["mcpServers"]
+
+
+def test_register_mcp_cursor_handles_corrupt_json(tmp_path):
+    """Treats corrupt JSON as empty config, writes cleanly."""
+    cfg = tmp_path / ".mcp.json"
+    cfg.write_text("{ not valid json")
+    register_mcp_cursor(dry_run=False, _config_override=cfg)
+    data = json.loads(cfg.read_text())
+    assert "jaxlint" in data["mcpServers"]

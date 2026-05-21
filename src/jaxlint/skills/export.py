@@ -241,3 +241,32 @@ def register_mcp_claude_code(
             dry_run=False,
             _config_override=_config_override,
         )
+
+
+def register_mcp_cursor(
+    *,
+    dry_run: bool,
+    _config_override: Path | None = None,
+) -> Path:
+    """Register jaxlint-mcp in Cursor's workspace MCP config (.cursor/mcp.json).
+
+    Cursor reads MCP servers from .cursor/mcp.json in the workspace root.
+    Merges into existing config; creates file if absent.
+
+    Returns the config path (written or would-be-written).
+    """
+    cfg_path = _config_override if _config_override is not None else Path(".cursor") / "mcp.json"
+    mcp_cmd = shutil.which("jaxlint-mcp") or "uv run --with jaxlint jaxlint-mcp"
+
+    if not dry_run:
+        cfg_path.parent.mkdir(parents=True, exist_ok=True)
+        existing: dict = {}
+        if cfg_path.exists():
+            try:
+                existing = json.loads(cfg_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                existing = {}
+        existing.setdefault("mcpServers", {})["jaxlint"] = {"command": mcp_cmd}
+        cfg_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+
+    return cfg_path
