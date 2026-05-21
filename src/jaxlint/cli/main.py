@@ -16,9 +16,11 @@ from jaxlint.core.rules import describe_rules
 from jaxlint.core.runner import format_diagnostics, resolve_paths, run_checks
 from jaxlint.core.doc.rubric_impl import RubricScorer
 from jaxlint.cli.skill_commands import skill_app
+from jaxlint.cli.setup_command import setup_cmd
 
 app = typer.Typer(help="JAX-oriented linting and doc quality", no_args_is_help=True)
 app.add_typer(skill_app, name="skill")
+app.command("setup")(setup_cmd)
 
 
 def _config_anchor(config: Path | None) -> Path:

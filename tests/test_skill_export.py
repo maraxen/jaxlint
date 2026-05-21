@@ -363,3 +363,91 @@ def test_register_mcp_cursor_handles_corrupt_json(tmp_path):
     register_mcp_cursor(dry_run=False, _config_override=cfg)
     data = json.loads(cfg.read_text())
     assert "jaxlint" in data["mcpServers"]
+
+
+# ---------------------------------------------------------------------------
+# setup command
+# ---------------------------------------------------------------------------
+
+def test_setup_cmd_default_calls_claude_code_and_gemini():
+    """Default (no --tool): calls claude-code and gemini, not cursor."""
+    from unittest.mock import patch
+
+    with patch("jaxlint.cli.setup_command.register_mcp_claude_code") as m_cc, \
+         patch("jaxlint.cli.setup_command.register_mcp") as m_reg, \
+         patch("jaxlint.cli.setup_command.export_skill"), \
+         patch("jaxlint.cli.setup_command.list_skills", return_value=[]):
+        m_cc.return_value = Path.home() / ".claude.json"
+        m_reg.return_value = Path.home() / ".gemini" / "settings.json"
+
+        result = runner.invoke(main_app, ["setup", "--dry-run"])
+
+        assert result.exit_code == 0
+        m_cc.assert_called_once_with(dry_run=True)
+        gemini_calls = [c for c in m_reg.call_args_list if c.kwargs.get("tool") == "gemini"]
+        assert len(gemini_calls) == 1
+
+
+def test_setup_cmd_cursor_only_skips_skills_and_registers_cursor():
+    """--tool cursor: registers cursor, skips skills, skips claude-code."""
+    from unittest.mock import patch
+
+    with patch("jaxlint.cli.setup_command.register_mcp_cursor") as m_cur, \
+         patch("jaxlint.cli.setup_command.register_mcp_claude_code") as m_cc, \
+         patch("jaxlint.cli.setup_command.export_skill") as m_exp, \
+         patch("jaxlint.cli.setup_command.list_skills", return_value=[]):
+        m_cur.return_value = Path(".cursor") / "mcp.json"
+
+        result = runner.invoke(main_app, ["setup", "--tool", "cursor", "--dry-run"])
+
+        assert result.exit_code == 0
+        m_cur.assert_called_once_with(dry_run=True)
+        m_cc.assert_not_called()
+        m_exp.assert_not_called()  # cursor surface has no skill export
+
+
+def test_setup_cmd_no_mcp_skips_all_registration():
+    """--no-mcp: skips all registration functions."""
+    from unittest.mock import patch
+
+    with patch("jaxlint.cli.setup_command.register_mcp_claude_code") as m_cc, \
+         patch("jaxlint.cli.setup_command.register_mcp") as m_reg, \
+         patch("jaxlint.cli.setup_command.register_mcp_cursor") as m_cur, \
+         patch("jaxlint.cli.setup_command.export_skill"), \
+         patch("jaxlint.cli.setup_command.list_skills", return_value=[]):
+
+        result = runner.invoke(main_app, ["setup", "--no-mcp", "--dry-run"])
+
+        assert result.exit_code == 0
+        m_cc.assert_not_called()
+        m_reg.assert_not_called()
+        m_cur.assert_not_called()
+
+
+def test_setup_cmd_unknown_tool_exits_nonzero():
+    """Unknown surface name: exits with code 1."""
+    result = runner.invoke(main_app, ["setup", "--tool", "vscode-unknown"])
+    assert result.exit_code == 1
+
+
+def test_setup_cmd_cursor_actually_writes_mcp_json(tmp_path):
+    """Integration: cursor surface calls real register_mcp_cursor and writes file."""
+    from unittest.mock import patch
+    from jaxlint.skills.export import register_mcp_cursor as real_cursor
+
+    cursor_config = tmp_path / "cursor_mcp.json"
+
+    def cursor_with_override(**kwargs):
+        return real_cursor(dry_run=kwargs.get("dry_run", False), _config_override=cursor_config)
+
+    with patch("jaxlint.cli.setup_command.register_mcp_cursor", side_effect=cursor_with_override), \
+         patch("jaxlint.cli.setup_command.export_skill"), \
+         patch("jaxlint.cli.setup_command.list_skills", return_value=[]):
+
+        result = runner.invoke(main_app, ["setup", "--tool", "cursor"])
+
+        assert result.exit_code == 0
+        assert cursor_config.exists()
+        data = json.loads(cursor_config.read_text())
+        assert "mcpServers" in data
+        assert "jaxlint" in data["mcpServers"]
