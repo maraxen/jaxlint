@@ -198,3 +198,19 @@ def test_cli_hlo_stub_with_hlo_extra() -> None:
     r = runner.invoke(app, ["hlo"])
     assert r.exit_code == 0
     assert "GraphAuditSensor" in r.output
+
+
+@pytest.mark.smoke
+def test_cli_export_default_options() -> None:
+    r = runner.invoke(app, ["export"])
+    assert r.exit_code == 0
+    assert "claude_code" in r.output
+    assert "user" in r.output
+
+
+@pytest.mark.smoke
+def test_cli_export_with_surface_and_level() -> None:
+    r = runner.invoke(app, ["export", "--surface", "gemini", "--level", "workspace"])
+    assert r.exit_code == 0
+    assert "gemini" in r.output
+    assert "workspace" in r.output
