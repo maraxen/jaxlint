@@ -55,8 +55,12 @@ class ScatterGatherVisitor(ast.NodeVisitor):
 
     def _tag_parent_bodies(self, node: ast.AST) -> None:
         for _, value in ast.iter_fields(node):
-            if isinstance(value, list) and value and isinstance(value[0], ast.AST):
+            if isinstance(value, list) and value and any(isinstance(v, ast.AST) for v in value):
                 for child in value:
+                    if child is None:
+                        continue
+                    if not isinstance(child, ast.AST):
+                        continue
                     child._parent_body = value  # type: ignore[attr-defined]
                     self._tag_parent_bodies(child)
             elif isinstance(value, ast.AST):

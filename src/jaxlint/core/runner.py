@@ -285,13 +285,17 @@ def format_rich(diagnostics: list[Diagnostic]) -> str:
     use_link = tty and color
 
     for d in sorted(diagnostics, key=lambda x: x.sort_key()):
+        # Show a short label in hyperlinks to avoid breaking filenames when
+        # Rich wraps long paths inside the OSC8 escape sequence. Keep the
+        # full path for non-hyperlink output.
+        display_label = f"{d.path.name}:{d.line}:{d.col}"
         loc_plain = f"{d.path}:{d.line}:{d.col}"
         if use_link:
             try:
                 uri = d.path.resolve().as_uri()
-                loc_cell: Text | str = _osc8_file_link(uri, loc_plain)
+                loc_cell: Text | str = _osc8_file_link(uri, display_label)
             except (OSError, ValueError):
-                loc_cell = loc_plain
+                loc_cell = display_label
         else:
             loc_cell = loc_plain
 
