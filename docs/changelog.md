@@ -27,6 +27,7 @@ Notable changes to jaxlint are listed here. Versions match the `version` field i
 
 ## Unreleased
 
+- **Dev / CI:** **[Astral ty](https://docs.astral.sh/ty/)** — dev dependency, **`[tool.ty]`** in **`pyproject.toml`**, and **`lint-test`** runs **`uv run ty check --output-format github`** on first-party **`src/`**; see [Contributing](contributing.md#static-typing-ty). Typing-only fixes: Griffe **`Docstring.parse`** style argument (`style.py`); explicit AST narrowing in **`scatter_gather.py`** (`_at_set_base`).
 - **Docs / HLO:** [Goldens: mapping vs counts](hlo.md#goldens-mapping-vs-counts) explains **`get_operation_inventory`** vs **`get_source_mapping`** vs **`get_operations`**; [ADR 0001](adr/0001-hlo-diagnostics-feasibility.md) tracks Phase A feasibility before **`HLO*`** rules.
 - **LSP (optional):** **`jaxlint[lsp]`** adds a **diagnostics-only** language server (**stdio**, **full** document sync, **`file://`** URIs only). Entrypoints: **`jaxlint-lsp`**, **`python -m jaxlint.lsp`**. Uses **`load_config(path.parent)`** and **`diagnostics_for_python_source`** (no disk cache in the server path). See [Language server](lsp.md).
 - **Library:** **`diagnostics_for_python_source`** on **`jaxlint.core`** for path + source string (sorted diagnostics; cache-free).

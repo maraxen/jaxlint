@@ -15,6 +15,17 @@ Development dependencies live in `[dependency-groups] dev`. Sphinx / Read the Do
 uv run ruff check src tests
 ```
 
+## Static typing (ty)
+
+Jaxlint uses **[Astral ty](https://docs.astral.sh/ty/)** (`uv run ty check`). Configuration lives in **`[tool.ty]`** in [`pyproject.toml`](../pyproject.toml); CI type-checks first-party code under **`src/`**.
+
+Libraries that combine jaxlint may also use **jaxtyping** for array shape annotations and optional **beartype** at boundaries — orthogonal to jaxlint.
+
+```bash
+uv run ty check
+uv run ty check --output-format github   # same as CI annotations
+```
+
 ## Running tests
 
 | Command | Purpose |

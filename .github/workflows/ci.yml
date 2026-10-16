@@ -8,7 +8,7 @@
 #   - .readthedocs.yml
 #   - README.md
 #
-# lint-test: every PR/push runs Ruff plus full pytest with coverage (same matrix as local release checks).
+# lint-test: every PR/push runs Ruff, ty on src/ ([tool.ty] in pyproject), then full pytest with coverage (same matrix as local release checks).
 #
 name: CI
 
@@ -37,6 +37,9 @@ jobs:
 
       - name: Ruff
         run: uv run ruff check src tests
+
+      - name: ty (Astral type checker)
+        run: uv run ty check --output-format github
 
       - name: Tests + coverage
         run: uv run pytest -q --cov=jaxlint --cov-report=term-missing --cov-report=xml

@@ -31,11 +31,23 @@ class ScatterGatherVisitor(ast.NodeVisitor):
             and node.func.value.value.attr == "at"
         )
 
-    def _at_set_base(self, node: ast.Call) -> str | None:
-        try:
-            return node.func.value.value.value.id  # type: ignore[attr-defined]
-        except AttributeError:
+    def _at_set_base(self, node: ast.expr) -> str | None:
+        """Recover base name from ``x.at[...].set(...)`` (aligned with `_is_at_set`)."""
+        if not isinstance(node, ast.Call):
             return None
+        func = node.func
+        if not isinstance(func, ast.Attribute) or func.attr != "set":
+            return None
+        sub = func.value
+        if not isinstance(sub, ast.Subscript):
+            return None
+        at_chain = sub.value
+        if not isinstance(at_chain, ast.Attribute) or at_chain.attr != "at":
+            return None
+        base = at_chain.value
+        if isinstance(base, ast.Name):
+            return base.id
+        return None
 
     def visit_Module(self, node: ast.Module) -> None:
         self._tag_parent_bodies(node)
@@ -43,8 +55,12 @@ class ScatterGatherVisitor(ast.NodeVisitor):
 
     def _tag_parent_bodies(self, node: ast.AST) -> None:
         for _, value in ast.iter_fields(node):
-            if isinstance(value, list) and value and isinstance(value[0], ast.AST):
+            if isinstance(value, list) and value and any(isinstance(v, ast.AST) for v in value):
                 for child in value:
+                    if child is None:
+                        continue
+                    if not isinstance(child, ast.AST):
+                        continue
                     child._parent_body = value  # type: ignore[attr-defined]
                     self._tag_parent_bodies(child)
             elif isinstance(value, ast.AST):
@@ -57,6 +73,13 @@ class ScatterGatherVisitor(ast.NodeVisitor):
             for t in node.targets:
                 if isinstance(t, ast.Name):
                     lhs_names.add(t.id)
+
+            # Exempt buffer-accumulation self-updates: x = x.at[i].set(v).
+            # These appear in lax.scan bodies and column-fill loops where later
+            # reads access disjoint indices — not a scatter+gather anti-pattern.
+            if base in lhs_names:
+                self.generic_visit(node)
+                return
 
             parent_body = getattr(node, "_parent_body", None)
             if parent_body is not None:

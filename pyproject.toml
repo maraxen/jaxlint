@@ -60,9 +60,30 @@ jaxlint-mcp = "jaxlint.mcp.__main__:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/jaxlint"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"agent_assets" = "jaxlint/agent_assets"
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+# Astral ty — static typing (https://docs.astral.sh/ty/). CI runs `ty check` on `src/` only.
+[tool.ty.environment]
+python-version = "3.11"
+python = ".venv"
+
+[tool.ty.src]
+include = ["src"]
+respect-ignore-files = true
+
+# jaxlint.hlo imports jax, which ships only with the optional `hlo` extra. The
+# lint-test job installs lsp + mcp but not hlo (the merge-blocking `jax-hlo` job
+# covers that package with JAX installed), so jax is unresolvable there by design.
+[[tool.ty.overrides]]
+include = ["src/jaxlint/hlo/**"]
+
+[tool.ty.overrides.rules]
+unresolved-import = "ignore"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -85,6 +106,7 @@ dev = [
     "pytest-timeout>=2.3.0",
     "ruff>=0.8.0",
     "twine>=6.0.0",
+    "ty>=0.0.34",
 ]
 
 [tool.coverage.run]

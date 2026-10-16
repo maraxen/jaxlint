@@ -1,0 +1,16 @@
+Migration applied: 2026-05-22T12:01:46.143136
+Project: /home/marielle/projects/jaxlint
+
+.praxia/audit-impl-hosted-docs-ci-2026-05-05.md → .praxia/docs/audits/260505_audit-impl-hosted-docs-ci-2026-05-05.md [git]
+.praxia/audit-impl-lsp-docs-2026-05-05.md → .praxia/docs/audits/260505_audit-impl-lsp-docs-2026-05-05.md [git]
+.praxia/audit-sarif-implementation-2026.md → .praxia/docs/audits/260505_audit-sarif-implementation-2026.md [git]
+.praxia/fixer-handoff-hosted-docs.md → .praxia/docs/handoffs/260505_fixer-handoff-hosted-docs.md [git]
+.praxia/fixer-handoff-lsp-lp1.md → .praxia/docs/handoffs/260505_fixer-handoff-lsp-lp1.md [git]
+.praxia/plan-v5-revise-hlo-dx1.md → .praxia/docs/plans/260505_plan-v5-revise-hlo-dx1.md [git]
+.praxia/plan-v5-revise-hlo-goldens.md → .praxia/docs/plans/260505_plan-v5-revise-hlo-goldens.md [git]
+.praxia/plan-v5-revise-sarif-metadata.md → .praxia/docs/plans/260505_plan-v5-revise-sarif-metadata.md [git]
+.praxia/sprint-2026-05-config-evolution.md → .praxia/docs/plans/260505_sprint-2026-05-config-evolution.md [git]
+.praxia/sprint-2026-05-disk-cache.md → .praxia/docs/plans/260505_sprint-2026-05-disk-cache.md [git]
+.praxia/sprint-2026-07-trust-surfaces.md → .praxia/docs/plans/260505_sprint-2026-07-trust-surfaces.md [git]
+.praxia/sprint-jaxlint-runway-2026-05.md → .praxia/docs/plans/260506_sprint-jaxlint-runway-2026-05.md [git]
+docs/adr/0001-hlo-diagnostics-feasibility.md → .praxia/docs/decisions/260505_0001-hlo-diagnostics-feasibility.md [git]

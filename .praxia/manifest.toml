@@ -1,0 +1,37 @@
+[plugin]
+name            = "jaxlint"
+version         = "0.4.1"
+description     = "JAX/Equinox linting and usage guidance"
+requires_praxia = ">=1.0"
+
+[plugin.mcp]
+command = ["jaxlint-mcp"]
+
+[[plugin.skills]]
+name     = "using-jaxlint"
+path     = "agent_assets/skills/using-jaxlint/SKILL.md"
+triggers = ["jaxlint", "lint", "jax rule"]
+
+[[plugin.skills]]
+name     = "using-jax"
+path     = "agent_assets/skills/using-jax/SKILL.md"
+triggers = ["tracer error", "jit", "vmap", "NaN", "recompile"]
+
+[[plugin.skills]]
+name     = "using-equinox"
+path     = "agent_assets/skills/using-equinox/SKILL.md"
+triggers = ["eqx.Module", "filter_jit", "filter_grad"]
+
+[[plugin.snippets]]
+name           = "jaxlint-always-on"
+path           = "agent_assets/snippets/jaxlint-rules.md"
+scope          = "project"
+scope_detector = ["glob:pyproject.toml", "toml:pyproject.toml#tool.jaxlint"]
+
+[[plugin.agents]]
+name  = "jax-optimizer"
+path  = "agent_assets/agents/jax-optimizer.md"
+tools = ["jaxlint_check", "jaxlint_rules"]
+
+[plugin.export_command]
+claude_code = ["jaxlint", "export", "--surface", "claude_code", "--level", "user"]
