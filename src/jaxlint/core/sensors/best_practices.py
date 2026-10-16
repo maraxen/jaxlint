@@ -134,8 +134,8 @@ def _stmt_ancestor(node: ast.AST, func_or_module: ast.AST) -> ast.stmt | None:
     body: list[ast.stmt] = getattr(func_or_module, "body", [])
     curr: ast.AST | None = node
     while curr is not None:
-        if curr in body:
-            return curr  # type: ignore[return-value]
+        if isinstance(curr, ast.stmt) and curr in body:
+            return curr
         curr = getattr(curr, "parent", None)
     return None
 

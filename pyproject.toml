@@ -76,6 +76,15 @@ python = ".venv"
 include = ["src"]
 respect-ignore-files = true
 
+# jaxlint.hlo imports jax, which ships only with the optional `hlo` extra. The
+# lint-test job installs lsp + mcp but not hlo (the merge-blocking `jax-hlo` job
+# covers that package with JAX installed), so jax is unresolvable there by design.
+[[tool.ty.overrides]]
+include = ["src/jaxlint/hlo/**"]
+
+[tool.ty.overrides.rules]
+unresolved-import = "ignore"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 timeout_func_only = true
