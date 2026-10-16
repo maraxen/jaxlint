@@ -1,29 +1,39 @@
 ---
 name: exporting-jax
-description: Use when exporting a JAX model to StableHLO, compiling with IREE for WASM/native targets, or using jax.export for ahead-of-time compilation.
+description: Use when exporting a JAX function to StableHLO with jax.export — static and symbolic shapes, serialization, export parity, Equinox export, checkify, or auditing an exported graph with jaxlint[hlo]. For IREE, WASM, WebGPU or ONNX deployment targets, see xtrax's export reference.
 ---
 
 # exporting-jax
 
-Export JAX programs to portable intermediate representations for serving, embedding, or cross-platform deployment.
+Export JAX programs to StableHLO with `jax.export`: the portable, serializable artifact that
+deployment toolchains start from.
 
 ## When to use
 
-- Deploying a JAX model to a non-JAX runtime (browser, mobile, embedded)
-- Compiling ahead-of-time for latency-critical serving
-- Interoperating with TensorFlow SavedModel or ONNX ecosystems
-- Running inference in WASM (browser/server-side without GPU)
-- Auditing kernel graphs for performance or safety violations
-- Capturing model state without JAX dependency in deployment
+- Ahead-of-time export of a jitted function, for serving or for a later compile step
+- Serializing a compiled program to bytes and reloading it in another JAX process
+- Checking that an exported artifact matches the original function
+- Auditing an exported graph for performance or safety issues (`jaxlint[hlo]`)
+
+**Not covered here: compiling the export for another runtime** (IREE native/WASM/Vulkan,
+ONNX, the browser). That belongs to [xtrax](https://github.com/maraxen/xtrax)'s export layer and
+its `using-xtrax` skill, `references/export.md`. It covers what each target actually proves
+(`EXECUTED` vs `CODEGEN_ONLY`), independent parity oracles, and known gaps. In particular,
+**IREE 3.11 has no WebGPU backend, and the SPIR-V it emits for Vulkan is rejected by browsers**
+(push constants), so a compiled SPIR-V artifact is not evidence of browser readiness.
 
 ## StableHLO export requirements
 
-StableHLO is the portable IR format that JAX compiles to. For a function to export cleanly:
+StableHLO is the portable IR JAX lowers to. For a function to export cleanly:
 
-1. **Static shapes** — all array shapes must be known at export time. No dynamic shapes from Python. Use `jax.export.symbolic_shape` only if you need dynamic dims (advanced).
-2. **No dynamic control flow on traced values** — dynamic branches and iteration counts must not depend on traced array values. Use `jax.lax.cond`, `jax.lax.scan`, etc. for conditional or looping logic over arrays. (Static `for` over a fixed-length Python list is fine.)
-3. **Supported ops** — most `jnp.*` ops are supported. Watch for: `jnp.unique`, `jnp.nonzero`, `jnp.where` with dynamic shapes — these require known output sizes.
-4. **No Python-side randomness** — pass PRNGKey as an explicit argument; do not use `np.random` inside the exported function.
+1. **Static shapes.** All array shapes must be known at export time. For a dynamic
+   dimension, use `jax.export.symbolic_shape` (below).
+2. **No Python control flow on traced values.** Use `jax.lax.cond`, `jax.lax.scan`,
+   `jax.lax.while_loop` etc. A static `for` over a fixed-length Python list is fine.
+3. **Known output sizes.** `jnp.unique`, `jnp.nonzero` and size-changing `jnp.where`
+   need an explicit `size=` to export.
+4. **No Python-side randomness.** Pass a PRNG key as an argument; never call `np.random`
+   inside the exported function.
 
 ```python
 import jax
@@ -37,13 +47,14 @@ lowered = jax.jit(model_fn).lower(params, jnp.ones((batch, features)))
 print(lowered.as_text())  # inspect StableHLO
 ```
 
-## jax.export — native AOT API
+## jax.export: the AOT API
 
-`jax.export` (added in JAX 0.4.14+) is the recommended AOT path. It produces a portable artifact that can be serialized and deserialized without JAX.
+`jax.export` (public since JAX 0.4.30; earlier releases had `jax.experimental.export`) is
+the recommended AOT path. It produces an `Exported` artifact that serializes to bytes.
 
 ```python
 import jax
-import jax.export
+import jax.numpy as jnp
 
 # Export with concrete shapes
 exported = jax.export.export(jax.jit(model_fn))(params, jnp.ones((4, 128)))
@@ -51,12 +62,13 @@ exported = jax.export.export(jax.jit(model_fn))(params, jnp.ones((4, 128)))
 # Serialize to bytes (e.g., for disk or network)
 serialized = exported.serialize()
 
-# Deserialize and call in another process (no JAX needed for execution)
+# Deserialize and call later, in another JAX process. Calling an Exported still
+# runs through JAX; it removes the need for the original Python source, not for JAX.
 reloaded = jax.export.deserialize(serialized)
 result = reloaded.call(params, x)
 ```
 
-**Shape polymorphism** — export with symbolic batch dimension for serving:
+**Shape polymorphism**: export with a symbolic batch dimension for serving:
 
 ```python
 import jax
@@ -86,90 +98,24 @@ result = exported.call(params, x)
 
 ### Verifying export parity
 
-Before deploying an exported artifact, verify that it produces identical results to the original JAX function:
+Before relying on an exported artifact, check it against the original function:
 
 ```python
 import jax
 import jax.numpy as jnp
 
-# Run in JAX:
 expected = jax.jit(model_fn)(params, x)
 
-# Run via exported:
 exported = jax.export.export(jax.jit(model_fn))(params, x)
 actual = exported.call(params, x)
 
-# Compare:
-assert jnp.allclose(expected, actual, atol=1e-5), f"Parity check failed"
-# Note: small numerical differences (1e-6 range) are normal due to fusion ordering
+assert jnp.allclose(expected, actual, atol=1e-5), "Parity check failed"
 ```
 
-## IREE compilation pipeline
-
-IREE compiles StableHLO to native code for CPU, GPU, WASM, and Vulkan. The typical path from JAX:
-
-```python
-# Step 1: Export and get StableHLO MLIR text from JAX
-exported = jax.export.export(jax.jit(model_fn))(params, sample_input)
-mlir_text = exported.mlir_module()  # guaranteed StableHLO MLIR string
-
-# Save to file
-with open("model.mlir", "w") as f:
-    f.write(mlir_text)
-
-# Step 2: compile with iree-compile (CLI)
-# iree-compile --iree-input-type=stablehlo \
-#              --iree-hal-target-backends=llvm-cpu \
-#              --output-format=vmfb \
-#              model.mlir -o model.vmfb
-
-# Step 3: run with iree-run-module or Python bindings
-import iree.runtime as ireert
-
-config = ireert.Config("local-task")
-ctx = ireert.SystemContext(config=config)
-vm_module = ireert.VmModule.mmap(ctx.instance, "model.vmfb")
-ctx.add_vm_module(vm_module)
-runner = ctx.modules.module["main"]
-result = runner(iree_params, iree_input)
-```
-
-**CPU / WASM (Emscripten) target** — for browser or Node.js execution without GPU:
-
-```bash
-iree-compile --iree-input-type=stablehlo \
-             --iree-hal-target-backends=llvm-cpu \
-             --output-format=vmfb \
-             model.mlir -o model_cpu.vmfb
-
-# For WASM specifically, add Emscripten flags:
-# --iree-llvmcpu-target-triple=wasm32-unknown-emscripten
-# --iree-llvmcpu-target-cpu-features=+atomics,+bulk-memory
-```
-
-**WebGPU target** — for GPU in the browser (NOT WASM):
-
-```bash
-iree-compile --iree-input-type=stablehlo \
-             --iree-hal-target-backends=webgpu-spirv \
-             --output-format=vmfb \
-             model.mlir -o model_webgpu.vmfb
-```
-
-**Key requirements for IREE:**
-- All shapes static at compile time (or use dynamic shape API)
-- No custom Python callbacks inside the compiled function
-- `iree-compile` version must match `iree-runtime` version (pin both in `pyproject.toml`)
-- Output file is a VMFB (IREE VM FlatBuffer); use `--output-format=mlir` for debugging
-
-## WebGPU / WASM deployment
-
-JAX does not currently export directly to WASM via `jax.export`. Valid platforms are `"cpu"`, `"cuda"`, `"tpu"`, `"rocm"`. For WASM and WebGPU deployment:
-
-- **IREE + Emscripten**: compile with `--iree-hal-target-backends=llvm-cpu` and `--iree-llvmcpu-target-triple=wasm32-unknown-emscripten` for WASM bytecode.
-- **ONNX Runtime Web**: convert via `jax2onnx` then load in ONNX Runtime Web.
-
-For GPU in the browser, use the IREE WebGPU target (see IREE compilation pipeline section above).
+This compares JAX with JAX on the same backend, so it can only catch export and serialization
+problems. A deployment target (IREE, ONNX Runtime) needs a parity check against an
+**independent** reference on that target, with a negative control that must fail. See xtrax's
+`references/parity.md`.
 
 ## Auditing exported kernels with jaxlint
 
@@ -193,7 +139,9 @@ operations = analyzer.get_operations()  # OperationInfo rows with locations
 provenance = analyzer.get_type_provenance()  # input/output shapes and dtypes
 ```
 
-**Note:** `GraphAuditSensor.audit_kernel` wraps `fn` with `checkify.checkify` before export. The resulting `Exported` artifact has extra error-state outputs. Use `audit_exported` directly on a pre-exported artifact to inspect the unchecked graph.
+**Note:** `GraphAuditSensor.audit_kernel` wraps `fn` with `checkify.checkify` before export.
+The resulting `Exported` artifact has extra error-state outputs. Use `audit_exported` directly
+on a pre-exported artifact to inspect the unchecked graph.
 
 ## Common export gotchas
 
@@ -201,14 +149,14 @@ provenance = analyzer.get_type_provenance()  # input/output shapes and dtypes
 |--------|---------|-----|
 | Dynamic shape in export | `TracerBoolConversionError` or shape mismatch at serialize | Pad to static shape before export; use `symbolic_shape` for dynamic dims |
 | Python `if` on traced value | `ConcretizationTypeError` during `lower()` | Replace with `jax.lax.cond` |
-| `jnp.unique` / `jnp.nonzero` | "output shapes not known" error | Pre-allocate output buffers with known max size or use `jnp.unique(..., size=N)` |
+| `jnp.unique` / `jnp.nonzero` | "output shapes not known" error | Pass `size=N` (e.g. `jnp.unique(x, size=N)`) or pre-allocate a known max size |
 | PRNG inside exported fn | Non-deterministic or error on deserialize | Pass `key` as explicit argument, call `jax.random.split` outside |
-| IREE version mismatch | Segfault or "invalid VMFB" on load | Pin `iree-compiler` and `iree-runtime` to exact same version |
-| Equinox Module export | `eqx.Module` is not a plain pytree for IREE | Call `eqx.partition(model, eqx.is_array)` to separate arrays and statics before export |
+| Equinox Module export | Non-array leaves in the exported signature | Call `eqx.partition(model, eqx.is_array)` to separate arrays and statics before export |
 
 ## Equinox model export pattern
 
-Equinox modules are JAX pytrees but carry non-array leaves. Separate arrays from statics before export:
+Equinox modules are JAX pytrees but carry non-array leaves. Separate arrays from statics before
+export:
 
 ```python
 import equinox as eqx
@@ -223,15 +171,12 @@ def model_fn(params, x):
 
 # Export params as the first arg; static is a closure constant
 exported = jax.export.export(jax.jit(model_fn))(params, sample_x)
-
-# IREE compilation
-mlir_text = exported.mlir_module()
-# ... iree-compile model.mlir -o model.vmfb
+mlir_text = exported.mlir_module()  # StableHLO, input to any downstream compiler
 ```
 
 ## Checkify + export for safe kernels
 
-Combine `jax.experimental.checkify` with export to capture safety checks in StableHLO:
+Combine `jax.experimental.checkify` with export to carry safety checks through to the artifact:
 
 ```python
 from jax.experimental import checkify
@@ -242,12 +187,21 @@ def safe_model_fn(params, x):
     checkify.check(jnp.all(x > 0), "inputs must be positive")
     return jnp.dot(x, params['w']) + params['b']
 
-# Wrap with checkify to embed checks as StableHLO ops
+# checkify threads the check through as explicit error state
 checked_fn = checkify.checkify(safe_model_fn, errors=checkify.all_checks)
 
-# Export the checked function (error state is an extra output)
+# The exported function returns (error, result); inspect `error` after each call
 exported = jax.export.export(jax.jit(checked_fn))(params, sample_x)
-# Note: exported has an extra error-state output — see audit_kernel note below
+err, out = exported.call(params, x)
+err.throw()  # raises if a check failed; err.get() returns the message or None
 ```
 
-Checks embed as `stablehlo.assert` and `stablehlo.custom_call` ops in MLIR, visible in audits.
+The error state is an extra output of the exported program, not a runtime abort or a
+`stablehlo` assert op. Callers must check it; this is the same effect as the `audit_kernel` note above.
+
+**A checkified export cannot be serialized.** Verified on jax 0.11.1:
+`exported.serialize()` raises `TypeError: Serialization is supported only for dictionaries with
+string keys`, because checkify's `Error` pytree is keyed by `ErrorEffect` objects. To ship it,
+return the error's leaves as plain arrays (`jax.tree_util.tree_leaves(err)`: boolean
+"check failed" flags and integer codes) and turn them back into errors on the host. The
+messages themselves do not survive.

@@ -228,12 +228,18 @@ print(predictions.shape)  # (5,)
   for training paths and any fixed-length loop inside `jax.grad` / `eqx.filter_grad`.
 - **`lax.while_loop`** supports data-dependent termination (stop at EOS), but it is **not
   reverse-mode differentiable**. Use it for inference paths that can stop early.
-- **If an AR loop compiles slowly, measure before switching primitives.** Record compile
-  seconds for both (`jax_log_compiles`, or `xtrax.profiling.count_backend_compiles`), and
-  check `unroll`, the carry size, and what the body closes over. One report (prxteinmpnn,
-  Blackwell SM120, bucket 512, B=16) saw a 30–40 min cold compile for `scan` against 6.5 s
-  for `while_loop`. The IR comparison above does not explain that gap, so treat it as an
-  unexplained observation from one workload, not a rule.
+- **Long autoregressive loops on GPU: expect `scan` to be able to cost far more backend
+  compile time.** Two reports:
+  - prxteinmpnn, Blackwell SM120, bucket 512, B=16: 30–40 min cold compile for `scan`
+    (`unroll=1`) against 6.5 s for `while_loop`;
+  - xtrax, L40S, a 512-step decode: over 20 min of backend codegen as `scan`, with no such
+    cost as one `WhileOp`.
+
+  The StableHLO is the same size either way (above), so the gap arises later, in XLA's
+  backend. A plausible but unverified cause: a `scan` has a static trip count XLA can unroll
+  on, and a data-dependent `while_loop` does not. For an inference-only long loop, prefer
+  `while_loop`. Before switching for compile time alone, measure compile seconds for both
+  (`jax_log_compiles`, or `xtrax.profiling.count_backend_compiles`).
 
 **Pattern: bundle the carry as a single struct, with a preallocated output buffer:**
 
@@ -287,7 +293,7 @@ def ar_decode_train(init_token, init_state, max_len: int) -> jax.Array:
 | Needs gradients (training, inside `jax.grad` / `eqx.filter_grad`) | `lax.scan` |
 | Inference with data-dependent stop (EOS) | `lax.while_loop` |
 | Fixed-length inference | Either: same IR at `unroll=1`; measure if compile time matters |
-| Both modes needed | Separate code paths keyed by a mode flag (see `developing-composable-jax`, Pattern 7) |
+| Both modes needed | Separate code paths keyed by a mode flag. With xtrax: `CarrySpec(collect_outputs=True)` plans a `Scan`, and `CarrySpec(collect_outputs=False, cond=...)` plans a `WhileCarry` (`using-xtrax`, `references/adoption.md`) |
 
 ## Numerical Safety
 
