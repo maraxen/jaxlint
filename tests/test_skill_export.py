@@ -10,8 +10,6 @@ from typer.testing import CliRunner
 from jaxlint.cli.main import app as main_app
 from jaxlint.skills.export import (
     ExportError,
-    ExportResult,
-    SkillInfo,
     export_skill,
     get_skills_root,
     list_skills,
@@ -294,7 +292,7 @@ def test_register_mcp_claude_code_subprocess_error_falls_back(monkeypatch, tmp_p
     assert len(fallback_calls) == 1
     assert fallback_calls[0]["tool"] == "claude"
     assert fallback_calls[0]["level"] == "user"
-    assert fallback_calls[0]["dry_run"] == False
+    assert not fallback_calls[0]["dry_run"]
     assert fallback_calls[0].get("_config_override") is None
     assert result == tmp_path / ".claude.json"
 
