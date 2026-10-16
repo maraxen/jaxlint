@@ -34,6 +34,7 @@ Start from the [project README](https://github.com/maraxen/jaxlint/blob/main/REA
 :caption: Guides
 
 cli
+setup-command
 configuration
 library
 api

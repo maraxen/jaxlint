@@ -25,7 +25,6 @@
 ## Research
 
 ## Decisions
-- [260505_0001-hlo-diagnostics-feasibility](decisions/260505_0001-hlo-diagnostics-feasibility.md)
 
 ## Reference
 
