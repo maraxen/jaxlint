@@ -41,15 +41,11 @@ def export_cmd(
     ),
     all_skills: bool = typer.Option(False, "--all", help="Export all available skills."),
     tool: str = typer.Option("claude", "--tool", "-t", help="Target tool: claude or gemini"),
-    level: str = typer.Option(
-        "user", "--level", "-l", help="Install level: user or workspace"
-    ),
+    level: str = typer.Option("user", "--level", "-l", help="Install level: user or workspace"),
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Print what would happen without writing any files."
     ),
-    no_mcp: bool = typer.Option(
-        False, "--no-mcp", help="Skip MCP server registration."
-    ),
+    no_mcp: bool = typer.Option(False, "--no-mcp", help="Skip MCP server registration."),
     target_dir: Path | None = typer.Option(
         None,
         "--target-dir",
@@ -64,8 +60,7 @@ def export_cmd(
     """
     if not skill_name and not all_skills:
         typer.echo(
-            "Specify a skill name or pass --all. "
-            "Use `jaxlint skill list` to see available skills.",
+            "Specify a skill name or pass --all. Use `jaxlint skill list` to see available skills.",
             err=True,
         )
         raise typer.Exit(2)
@@ -79,8 +74,7 @@ def export_cmd(
         skills_to_export = [s for s in skills_to_export if s.name == skill_name]
         if not skills_to_export:
             typer.echo(
-                f"Unknown skill: {skill_name!r}. "
-                f"Run `jaxlint skill list` to see available skills.",
+                f"Unknown skill: {skill_name!r}. Run `jaxlint skill list` to see available skills.",
                 err=True,
             )
             raise typer.Exit(1)

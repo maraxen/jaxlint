@@ -90,8 +90,7 @@ def get_skills_root() -> Path:
     except Exception:
         pass
     raise ExportError(
-        "Cannot find bundled skill assets. "
-        "Re-install jaxlint or run from the repository root."
+        "Cannot find bundled skill assets. Re-install jaxlint or run from the repository root."
     )
 
 
@@ -125,9 +124,7 @@ def resolve_target(skill_name: str, *, tool: str, level: str) -> Path:
     """Return the install path for a skill given tool and level."""
     known = _known_skill_names()
     if skill_name not in known:
-        raise ExportError(
-            f"Unknown skill: {skill_name!r}. Available: {sorted(known)}"
-        )
+        raise ExportError(f"Unknown skill: {skill_name!r}. Available: {sorted(known)}")
     if tool == "claude":
         templates = _CLAUDE_TARGETS
     elif tool == "gemini":
@@ -135,9 +132,7 @@ def resolve_target(skill_name: str, *, tool: str, level: str) -> Path:
     else:
         raise ExportError(f"Unknown tool: {tool!r}. Choose 'claude' or 'gemini'.")
     if level not in templates:
-        raise ExportError(
-            f"Unknown level: {level!r}. Choose {list(templates)!r}."
-        )
+        raise ExportError(f"Unknown level: {level!r}. Choose {list(templates)!r}.")
     return Path(templates[level].format(name=skill_name))
 
 
@@ -151,9 +146,7 @@ def export_skill(
     # Validate skill name
     skills_by_name = {s.name: s for s in list_skills()}
     if skill_name not in skills_by_name:
-        raise ExportError(
-            f"Unknown skill: {skill_name!r}. Available: {sorted(skills_by_name)}"
-        )
+        raise ExportError(f"Unknown skill: {skill_name!r}. Available: {sorted(skills_by_name)}")
 
     if not dry_run:
         source = skills_by_name[skill_name].path

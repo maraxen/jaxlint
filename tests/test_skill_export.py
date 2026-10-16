@@ -1,4 +1,5 @@
 """Tests for jaxlint.skills.export."""
+
 from __future__ import annotations
 
 import json
@@ -24,6 +25,7 @@ from jaxlint.skills.export import (
 # get_skills_root
 # ---------------------------------------------------------------------------
 
+
 def test_get_skills_root_returns_existing_path():
     root = get_skills_root()
     assert root.exists(), f"skills root not found: {root}"
@@ -39,6 +41,7 @@ def test_get_skills_root_contains_skill_dirs():
 # ---------------------------------------------------------------------------
 # list_skills
 # ---------------------------------------------------------------------------
+
 
 def test_list_skills_returns_all_six():
     skills = list_skills()
@@ -60,6 +63,7 @@ def test_list_skills_have_descriptions():
 # ---------------------------------------------------------------------------
 # resolve_target
 # ---------------------------------------------------------------------------
+
 
 def test_resolve_target_claude_user():
     target = resolve_target("using-jax", tool="claude", level="user")
@@ -99,6 +103,7 @@ def test_resolve_target_unknown_skill_raises():
 # ---------------------------------------------------------------------------
 # export_skill
 # ---------------------------------------------------------------------------
+
 
 def test_export_skill_dry_run_writes_nothing(tmp_path):
     target = tmp_path / "SKILL.md"
@@ -149,6 +154,7 @@ def test_export_skill_unknown_skill_raises(tmp_path):
 # ---------------------------------------------------------------------------
 # register_mcp
 # ---------------------------------------------------------------------------
+
 
 def test_register_mcp_dry_run_writes_nothing(tmp_path):
     cfg = tmp_path / ".claude.json"
@@ -237,9 +243,15 @@ def test_skill_export_writes_file(tmp_path):
     result = runner.invoke(
         main_app,
         [
-            "skill", "export", "using-jax",
-            "--tool", "claude", "--level", "user",
-            "--target-dir", str(tmp_path),
+            "skill",
+            "export",
+            "using-jax",
+            "--tool",
+            "claude",
+            "--level",
+            "user",
+            "--target-dir",
+            str(tmp_path),
             "--no-mcp",
         ],
     )
@@ -250,6 +262,7 @@ def test_skill_export_writes_file(tmp_path):
 # ---------------------------------------------------------------------------
 # register_mcp_claude_code
 # ---------------------------------------------------------------------------
+
 
 def test_register_mcp_claude_code_subprocess_success(monkeypatch):
     """subprocess success: calls 'claude mcp add jaxlint <cmd>', returns claude path."""
@@ -324,6 +337,7 @@ def test_register_mcp_claude_code_subprocess_absent_falls_back(monkeypatch, tmp_
 # register_mcp_cursor
 # ---------------------------------------------------------------------------
 
+
 def test_register_mcp_cursor_dry_run(tmp_path):
     """dry_run=True returns path without writing."""
     cfg = tmp_path / ".mcp.json"
@@ -367,14 +381,17 @@ def test_register_mcp_cursor_handles_corrupt_json(tmp_path):
 # setup command
 # ---------------------------------------------------------------------------
 
+
 def test_setup_cmd_default_calls_claude_code_and_gemini():
     """Default (no --tool): calls claude-code and gemini, not cursor."""
     from unittest.mock import patch
 
-    with patch("jaxlint.cli.setup_command.register_mcp_claude_code") as m_cc, \
-         patch("jaxlint.cli.setup_command.register_mcp") as m_reg, \
-         patch("jaxlint.cli.setup_command.export_skill"), \
-         patch("jaxlint.cli.setup_command.list_skills", return_value=[]):
+    with (
+        patch("jaxlint.cli.setup_command.register_mcp_claude_code") as m_cc,
+        patch("jaxlint.cli.setup_command.register_mcp") as m_reg,
+        patch("jaxlint.cli.setup_command.export_skill"),
+        patch("jaxlint.cli.setup_command.list_skills", return_value=[]),
+    ):
         m_cc.return_value = Path.home() / ".claude.json"
         m_reg.return_value = Path.home() / ".gemini" / "settings.json"
 
@@ -390,10 +407,12 @@ def test_setup_cmd_cursor_only_skips_skills_and_registers_cursor():
     """--tool cursor: registers cursor, skips skills, skips claude-code."""
     from unittest.mock import patch
 
-    with patch("jaxlint.cli.setup_command.register_mcp_cursor") as m_cur, \
-         patch("jaxlint.cli.setup_command.register_mcp_claude_code") as m_cc, \
-         patch("jaxlint.cli.setup_command.export_skill") as m_exp, \
-         patch("jaxlint.cli.setup_command.list_skills", return_value=[]):
+    with (
+        patch("jaxlint.cli.setup_command.register_mcp_cursor") as m_cur,
+        patch("jaxlint.cli.setup_command.register_mcp_claude_code") as m_cc,
+        patch("jaxlint.cli.setup_command.export_skill") as m_exp,
+        patch("jaxlint.cli.setup_command.list_skills", return_value=[]),
+    ):
         m_cur.return_value = Path(".cursor") / "mcp.json"
 
         result = runner.invoke(main_app, ["setup", "--tool", "cursor", "--dry-run"])
@@ -408,12 +427,13 @@ def test_setup_cmd_no_mcp_skips_all_registration():
     """--no-mcp: skips all registration functions."""
     from unittest.mock import patch
 
-    with patch("jaxlint.cli.setup_command.register_mcp_claude_code") as m_cc, \
-         patch("jaxlint.cli.setup_command.register_mcp") as m_reg, \
-         patch("jaxlint.cli.setup_command.register_mcp_cursor") as m_cur, \
-         patch("jaxlint.cli.setup_command.export_skill"), \
-         patch("jaxlint.cli.setup_command.list_skills", return_value=[]):
-
+    with (
+        patch("jaxlint.cli.setup_command.register_mcp_claude_code") as m_cc,
+        patch("jaxlint.cli.setup_command.register_mcp") as m_reg,
+        patch("jaxlint.cli.setup_command.register_mcp_cursor") as m_cur,
+        patch("jaxlint.cli.setup_command.export_skill"),
+        patch("jaxlint.cli.setup_command.list_skills", return_value=[]),
+    ):
         result = runner.invoke(main_app, ["setup", "--no-mcp", "--dry-run"])
 
         assert result.exit_code == 0
@@ -438,10 +458,11 @@ def test_setup_cmd_cursor_actually_writes_mcp_json(tmp_path):
     def cursor_with_override(**kwargs):
         return real_cursor(dry_run=kwargs.get("dry_run", False), _config_override=cursor_config)
 
-    with patch("jaxlint.cli.setup_command.register_mcp_cursor", side_effect=cursor_with_override), \
-         patch("jaxlint.cli.setup_command.export_skill"), \
-         patch("jaxlint.cli.setup_command.list_skills", return_value=[]):
-
+    with (
+        patch("jaxlint.cli.setup_command.register_mcp_cursor", side_effect=cursor_with_override),
+        patch("jaxlint.cli.setup_command.export_skill"),
+        patch("jaxlint.cli.setup_command.list_skills", return_value=[]),
+    ):
         result = runner.invoke(main_app, ["setup", "--tool", "cursor"])
 
         assert result.exit_code == 0

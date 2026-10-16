@@ -93,9 +93,7 @@ def setup_cmd(
                     prefix = "Dry run — would register" if dry_run else "Registered"
                     typer.echo(f"{prefix} jaxlint-mcp (cursor) → {cfg.resolve()}")
             except ExportError as e:
-                typer.echo(
-                    f"Warning: MCP registration failed for {surface}: {e}", err=True
-                )
+                typer.echo(f"Warning: MCP registration failed for {surface}: {e}", err=True)
                 errors.append(f"mcp@{surface}")
 
     if errors:
