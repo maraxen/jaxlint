@@ -1,11 +1,11 @@
 [plugin]
 name            = "jaxlint"
-version         = "0.4.0"
+version         = "0.4.1"
 description     = "JAX/Equinox linting and usage guidance"
 requires_praxia = ">=1.0"
 
 [plugin.mcp]
-command = ["jaxlint", "serve"]
+command = ["jaxlint-mcp"]
 
 [[plugin.skills]]
 name     = "using-jaxlint"
