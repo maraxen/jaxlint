@@ -112,6 +112,30 @@ def test_jm003_large_math_fixture(fixtures_dir: Path) -> None:
     assert "JM003" in {d.rule_id for d in diags}
 
 
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    ("filename", "absent_rule"),
+    [
+        ("jl001_self_update_no_flag.py", "JL001"),
+        ("jl012_safe_divisor_no_flag.py", "JL012"),
+        ("jl005_shape_to_op_no_flag.py", "JL005"),
+        ("jl010_host_side_no_flag.py", "JL010"),
+    ],
+)
+def test_false_positive_fixtures_emit_no_diagnostic(
+    fixtures_dir: Path, filename: str, absent_rule: str
+) -> None:
+    """Regression: heuristic refinements must silence known false positives."""
+    p = fixtures_dir / filename
+    jl_only = LintConfig(select=frozenset(["JL"]))
+    diags = run_checks([p], cfg=jl_only, perf=True, doc=False, mathjx=False)
+    ids = {d.rule_id for d in diags}
+    assert absent_rule not in ids, (
+        f"{absent_rule} fired on {filename} — false positive not suppressed. "
+        f"Diagnostics: {[d.message for d in diags if d.rule_id == absent_rule]}"
+    )
+
+
 @pytest.mark.unit
 def test_rule_enabled_per_file_ignore() -> None:
     """Sanity-check config wiring without running full checks."""

@@ -74,6 +74,13 @@ class ScatterGatherVisitor(ast.NodeVisitor):
                 if isinstance(t, ast.Name):
                     lhs_names.add(t.id)
 
+            # Exempt buffer-accumulation self-updates: x = x.at[i].set(v).
+            # These appear in lax.scan bodies and column-fill loops where later
+            # reads access disjoint indices — not a scatter+gather anti-pattern.
+            if base in lhs_names:
+                self.generic_visit(node)
+                return
+
             parent_body = getattr(node, "_parent_body", None)
             if parent_body is not None:
                 idx = next((i for i, n in enumerate(parent_body) if n is node), None)
