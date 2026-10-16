@@ -7,7 +7,13 @@ import time
 from pathlib import Path
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+try:
+    # mcp 2.x renamed FastMCP to MCPServer; the surface used here (constructor name,
+    # @tool(), run() defaulting to stdio) is unchanged. 2.x is what resolves on
+    # Python >= 3.13 alongside the `plugin` extra (cisternal -> fastmcp -> mcp 2).
+    from mcp.server.mcpserver import MCPServer as _Server
+except ModuleNotFoundError:  # mcp 1.x
+    from mcp.server.fastmcp import FastMCP as _Server
 
 from jaxlint import __version__
 from jaxlint.core.config import load_config
@@ -15,7 +21,7 @@ from jaxlint.core.diagnostic import Diagnostic
 from jaxlint.core.rules import describe_rules
 from jaxlint.core.runner import diagnostics_for_python_source, format_json, run_checks
 
-mcp = FastMCP("jaxlint")
+mcp = _Server("jaxlint")
 
 MCP_SCHEMA_VERSION = "jaxlint.mcp.v1"
 

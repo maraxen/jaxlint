@@ -22,6 +22,26 @@ name     = "using-equinox"
 path     = "agent_assets/skills/using-equinox/SKILL.md"
 triggers = ["eqx.Module", "filter_jit", "filter_grad"]
 
+[[plugin.skills]]
+name     = "developing-composable-jax"
+path     = "agent_assets/skills/developing-composable-jax/SKILL.md"
+triggers = ["composable-jax", "axis-aware", "decode-modes", "module-diverging"]
+
+[[plugin.skills]]
+name     = "exporting-jax"
+path     = "agent_assets/skills/exporting-jax/SKILL.md"
+triggers = ["jax.export", "StableHLO", "IREE", "AOT compile"]
+
+[[plugin.skills]]
+name     = "using-optax"
+path     = "agent_assets/skills/using-optax/SKILL.md"
+triggers = ["optax", "GradientTransformation", "learning rate schedule"]
+
+[[plugin.skills]]
+name     = "using-orbax"
+path     = "agent_assets/skills/using-orbax/SKILL.md"
+triggers = ["orbax", "CheckpointManager", "checkpoint restore"]
+
 [[plugin.snippets]]
 name           = "jaxlint-always-on"
 path           = "agent_assets/snippets/jaxlint-rules.md"

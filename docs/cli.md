@@ -72,6 +72,22 @@ If `jaxlint[hlo]` is installed, prints a short hint for using `jaxlint.hlo` from
 
 If the optional HLO stack cannot be imported (missing extra or JAX), prints an error to stderr and exits **`2`**.
 
+## `jaxlint plugin`
+
+Installs, updates or exports the jaxlint agent plugin: the skills, the `jax-optimizer` agent, and the `jaxlint-mcp` server. It is the same surface as `bth plugin`, `mrx plugin` and `myxcel plugin`.
+
+All arguments, including `--help`, are forwarded unchanged to [cisternal](https://pypi.org/project/cisternal/)'s plugin sub-app, so the subcommands, help text and exit codes are cisternal's:
+
+```bash
+jaxlint plugin info                 # where the bundle and marketplace resolve from (read-only)
+jaxlint plugin install --scope user # publish and install (updates an existing install)
+jaxlint plugin export claude --out DIR
+```
+
+The bundle comes from the checkout's `.praxia/manifest.toml` when run inside a jaxlint checkout. Otherwise it comes from the packaged `jaxlint/agent_plugin.json` snapshot.
+
+Requires the optional `plugin` extra, which installs cisternal and needs Python ≥ 3.13. Without it, the command prints an install hint to stderr and exits **`1`**.
+
 ## JSON output shape
 
 For `check` and `doc` with `--format json`, output is a JSON array of objects with keys: `rule_id`, `severity`, `message`, `path`, `line`, `col`, `end_line`, `end_col` (see `format_json` in `jaxlint.core.runner`).
