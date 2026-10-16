@@ -19,3 +19,13 @@ docs/_build/
 pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Machine-local praxia state and caches (not versioned; .praxia/manifest.toml and .praxia/docs/ stay tracked)
+.fastembed_cache/
+.praxia/cache/
+.praxia/identity.json
+.praxia/workspace.id
+.praxia/*.jsonl
+.praxia/*.lock
+.agent/workspace.id
+.cursor/mcp.json
