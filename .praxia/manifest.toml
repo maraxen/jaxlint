@@ -42,6 +42,11 @@ name     = "using-orbax"
 path     = "agent_assets/skills/using-orbax/SKILL.md"
 triggers = ["orbax", "CheckpointManager", "checkpoint restore"]
 
+[[plugin.skills]]
+name     = "jax-port"
+path     = "agent_assets/skills/jax-port/SKILL.md"
+triggers = ["jax-port", "numpy-to-jax", "pytorch-to-jax", "tensorflow-to-jax", "parity-test"]
+
 [[plugin.snippets]]
 name           = "jaxlint-always-on"
 path           = "agent_assets/snippets/jaxlint-rules.md"
