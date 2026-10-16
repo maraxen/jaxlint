@@ -25,7 +25,7 @@ triggers = ["eqx.Module", "filter_jit", "filter_grad"]
 [[plugin.skills]]
 name     = "developing-composable-jax"
 path     = "agent_assets/skills/developing-composable-jax/SKILL.md"
-triggers = ["composable-jax", "axis-aware", "decode-modes", "module-diverging"]
+triggers = ["composable-jax", "module-diverging", "branching __call__", "swappable implementation"]
 
 [[plugin.skills]]
 name     = "exporting-jax"
