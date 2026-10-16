@@ -1,6 +1,6 @@
 ---
 name: using-jax
-description: Use when writing or modifying JAX code — tracer errors, NaN debugging, recompilation issues, memory pressure, or jaxlint rule violations.
+description: Use when writing or modifying JAX code — tracer errors, NaN debugging, recompilation issues, memory pressure, or jaxlint rule violations — and before writing any loop over replicates, bootstrap resamples, pairs, edges, cells or frames, or launching a numerical run expected to take more than a few minutes (vectorization + production-shape profiling discipline).
 ---
 
 # using-jax
@@ -168,9 +168,9 @@ Python's `if` and `while` cannot depend on tracer values. Use `jax.lax.cond` for
 
 **Quick reference:**
 - `jax.lax.cond(pred, f_true, f_false, *operands)` — if/else for dynamic predicates
-- `jax.lax.scan(f, init, xs)` — loop with carry (sequence → accumulator)
+- `jax.lax.scan(f, init, xs)` — loop with carry (sequence → accumulator); reverse-mode differentiable
 - `jax.lax.fori_loop(start, stop, body_fn, init)` — for loop with fixed range
-- `jax.lax.while_loop(cond_fn, body_fn, init)` — while loop
+- `jax.lax.while_loop(cond_fn, body_fn, init)` — while loop with dynamic termination; not reverse-mode differentiable
 - `jax.vmap(f, in_axes=...)` — vectorize over batch axis
 
 **Example:**
@@ -215,6 +215,79 @@ w = jnp.ones(10)
 predictions = jax.vmap(lambda x: predict(x, w))(batch_x)
 print(predictions.shape)  # (5,)
 ```
+
+## lax.scan vs lax.while_loop for Autoregressive Loops
+
+**Choose by semantics, not by an assumed compile-time gap.**
+
+- **IR size is the same at `unroll=1`.** Both primitives lower to a single `stablehlo.while`
+  with one body (verified on jax 0.11.1: 1 `while` op each, 39 vs 29 lines of StableHLO for a
+  512-step loop). `scan` is not unrolled per step. Only `unroll=k > 1` replicates the body,
+  and it is still one `while`.
+- **`lax.scan`** is reverse-mode differentiable and stacks per-step outputs for you. Use it
+  for training paths and any fixed-length loop inside `jax.grad` / `eqx.filter_grad`.
+- **`lax.while_loop`** supports data-dependent termination (stop at EOS), but it is **not
+  reverse-mode differentiable**. Use it for inference paths that can stop early.
+- **If an AR loop compiles slowly, measure before switching primitives.** Record compile
+  seconds for both (`jax_log_compiles`, or `xtrax.profiling.count_backend_compiles`), and
+  check `unroll`, the carry size, and what the body closes over. One report (prxteinmpnn,
+  Blackwell SM120, bucket 512, B=16) saw a 30–40 min cold compile for `scan` against 6.5 s
+  for `while_loop`. The IR comparison above does not explain that gap, so treat it as an
+  unexplained observation from one workload, not a rule.
+
+**Pattern: bundle the carry as a single struct, with a preallocated output buffer:**
+
+```python
+import jax
+import jax.numpy as jnp
+from jax import lax
+from typing import NamedTuple
+
+class ARCarry(NamedTuple):
+    step: jax.Array            # scalar int, current position
+    tokens: jax.Array          # (seq_len,) output buffer
+    state: jax.Array           # recurrent state / KV cache
+
+def ar_step(carry: ARCarry) -> ARCarry:
+    step, tokens, state = carry
+    new_token, new_state = model_step(tokens[step - 1], state)
+    tokens = tokens.at[step].set(new_token)
+    return ARCarry(step + 1, tokens, new_state)
+
+def ar_decode_inference(init_tokens, init_state, max_len: int) -> jax.Array:
+    init_carry = ARCarry(
+        step=jnp.array(1),
+        tokens=init_tokens,
+        state=init_state,
+    )
+    final_carry = lax.while_loop(
+        cond_fun=lambda c: c.step < max_len,
+        body_fun=ar_step,
+        init_val=init_carry,
+    )
+    return final_carry.tokens
+
+# Training path — use lax.scan (differentiable). The carry keeps a fixed shape:
+# carry the last token and let scan stack the per-step outputs. Never grow an
+# array in the carry (jnp.append / concatenate): scan requires the carry's
+# shape and dtype to be identical on every step and raises a TypeError otherwise.
+def ar_decode_train(init_token, init_state, max_len: int) -> jax.Array:
+    def step(carry, _):
+        token, state = carry
+        new_token, new_state = model_step(token, state)
+        return (new_token, new_state), new_token
+    _, tokens = lax.scan(step, (init_token, init_state), None, length=max_len)
+    return tokens  # (max_len, ...) stacked by scan
+```
+
+**Decision table:**
+
+| Context | Use |
+|---------|-----|
+| Needs gradients (training, inside `jax.grad` / `eqx.filter_grad`) | `lax.scan` |
+| Inference with data-dependent stop (EOS) | `lax.while_loop` |
+| Fixed-length inference | Either: same IR at `unroll=1`; measure if compile time matters |
+| Both modes needed | Separate code paths keyed by a mode flag (see `developing-composable-jax`, Pattern 7) |
 
 ## Numerical Safety
 
@@ -427,3 +500,37 @@ jaxlint check src/
 ```
 
 Interpret output as actionable refactoring: rewrite scatter patterns to vectorized form, mark hot functions with JIT, remove Python control flow that depends on tracers.
+
+## Vectorize everything you can — and profile at production shapes
+
+*(Moved verbatim from the `~/.claude/CLAUDE.md` hard rule, 261016. The always-on core lives in
+`~/.claude/rules/vectorize.md`.)*
+
+**A Python loop over replicates, bootstrap resamples, pairs, edges, cells or frames is a defect
+until shown otherwise.** Written into the first design, not retrofitted after a slow run.
+
+- **Batch the leading axis.** Express B bootstrap draws, R replicates, P pairs and G grid
+  points as one array axis (`jax.vmap`, `lax.scan` only for true recurrences, batched
+  NumPy/`bincount`/einsum on host), not `for b in range(B): f(x_b)`. Where a function is
+  written for one input, give it a batched form and test that the batched output equals the
+  looped output bit for bit (or to a stated tolerance) before trusting it.
+- **Profile before running anything that takes more than a few minutes.** A tiny tracked
+  probe at production shapes (production K, N, B and pair count, not toy sizes) that reports
+  seconds per unit and the split between compile, device work, host work and Python
+  overhead. Estimate total wall time from it and put the estimate in the sidecar. A probe at
+  toy shapes misleads: cost can scale with K or K² and hide there.
+- **Count recompiles.** Set `jax_log_compiles` in the probe and confirm a steady-state unit
+  triggers zero. Keep shapes static (pad/mask, do not vary shapes per unit), hoist `jit`
+  out of loops, and do not spawn a fresh process per tiny unit if its start-up and compile
+  cost is comparable to the unit.
+- **Host loops over device calls are the usual culprit.** A per-unit device round trip or a
+  host-side numerical routine called B×P×arms times is the first thing to batch or move
+  on-device. Keep float64 on host for small post-hoc sums only; no device x64 in hot loops.
+- **Do not parallelise a slow algorithm in place of fixing it.** More workers on a shared
+  box (titanix) only raise load. Vectorise first, then size workers to the cores that are
+  actually free.
+
+(Learned 2026-10-16, denxity QB-MI coverage run: each bootstrap replicate looped B=200
+host-side NSB entropy fits per target, ~7 ms each at K=16, and cells cost 30–98 s per
+replicate at production size; ~270 chunks × 16 workers ran for most of a day on a shared
+20-core box. No profile at production shapes was taken before launch.)

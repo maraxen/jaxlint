@@ -252,3 +252,107 @@ class InferencePlan:
 **Skip when:** Single inference mode, fewer than 2 swappable components, or a function with 3 args would do.
 
 ---
+
+## SECTION 7: Pattern 7 — AutoregressiveMode: lax.while_loop for inference, lax.scan for training (HIGH IMPACT)
+
+**Context:** Some autoregressive decoders must be trained end-to-end *and* run at inference time with different loop needs:
+- Training needs `lax.scan`, which is reverse-mode differentiable.
+- Inference may want `lax.while_loop`, for an early stop on EOS, or because a measured compile time is lower on that workload.
+
+At `unroll=1` both primitives lower to a single `stablehlo.while` with one body (verified on jax 0.11.1). So the choice is about differentiability and termination, not IR size.
+
+**Observation, not a rule (prxteinmpnn, Blackwell SM120, bucket=512, B=16):** one decoder took 30–40 min to cold-compile with `lax.scan(unroll=1)` and 6.5 s with `lax.while_loop`. The lowering comparison above does not explain the gap. If you see something similar, measure compile seconds for both variants on your own workload (`jax_log_compiles`, or `xtrax.profiling.count_backend_compiles`) before adopting this pattern for compile time alone.
+
+**The pattern:** define an `AutoregressiveMode` config that selects the loop primitive, then dispatch inside the module's decode method.
+
+```python
+import dataclasses
+import jax
+import jax.numpy as jnp
+from jax import lax
+import equinox as eqx
+from typing import NamedTuple
+
+
+@dataclasses.dataclass(frozen=True)
+class AutoregressiveMode:
+    """Select loop primitive based on gradient requirements.
+
+    inference_only=True  → lax.while_loop (can stop early; not reverse-differentiable)
+    inference_only=False → lax.scan        (differentiable, training-safe)
+    """
+    inference_only: bool = False
+
+
+class ARCarry(NamedTuple):
+    """Bundled carry for while_loop — all mutable state in one struct."""
+    step: jax.Array        # scalar int, current decode position
+    outputs: jax.Array     # (seq_len, d_out) output buffer
+    state: jax.Array       # recurrent state / KV cache prefix
+
+
+class AutoregressiveDecode(eqx.Module):
+    step_fn: eqx.Module     # one decode step: (token, state) → (token, state)
+    max_len: int = eqx.field(static=True)
+
+    def __call__(
+        self,
+        init_token: jax.Array,
+        init_state: jax.Array,
+        *,
+        mode: AutoregressiveMode = AutoregressiveMode(),
+    ) -> jax.Array:
+        if mode.inference_only:
+            return self._while_loop_decode(init_token, init_state)
+        else:
+            return self._scan_decode(init_token, init_state)
+
+    def _while_loop_decode(self, init_token, init_state) -> jax.Array:
+        """Inference path: lax.while_loop (add an EOS test to the cond for early stop)."""
+        n, d = self.max_len, init_token.shape[-1]
+        init = ARCarry(
+            step=jnp.array(0),
+            outputs=jnp.zeros((n, d), dtype=init_token.dtype),
+            state=init_state,
+        )
+
+        def body(carry: ARCarry) -> ARCarry:
+            token_in = jnp.where(carry.step == 0, init_token, carry.outputs[carry.step - 1])
+            token_out, new_state = self.step_fn(token_in, carry.state)
+            outputs = carry.outputs.at[carry.step].set(token_out)
+            return ARCarry(carry.step + 1, outputs, new_state)
+
+        final = lax.while_loop(lambda c: c.step < self.max_len, body, init)
+        return final.outputs
+
+    def _scan_decode(self, init_token, init_state) -> jax.Array:
+        """Training path: lax.scan → reverse-mode differentiable."""
+        def step(carry, _):
+            token_in, state = carry
+            token_out, new_state = self.step_fn(token_in, state)
+            return (token_out, new_state), token_out
+
+        _, outputs = lax.scan(step, (init_token, init_state), None, length=self.max_len)
+        return outputs
+```
+
+**Caller usage:**
+```python
+# Inference (while_loop; not differentiable):
+tokens = decoder(init_token, init_state, mode=AutoregressiveMode(inference_only=True))
+
+# Training (scan; differentiable):
+tokens = decoder(init_token, init_state)  # default mode
+loss = cross_entropy(tokens, targets)
+grads = eqx.filter_grad(lambda m: cross_entropy(m(init_token, init_state), targets))(decoder)
+```
+
+**YAGNI gate:** Only reach for this pattern when:
+- The module needs BOTH training (grad) and inference modes, AND
+- inference needs something `scan` cannot give: a data-dependent stop (EOS), or a compile-time
+  or run-time win you have *measured* on this workload for the `while_loop` variant.
+
+**Skip when:** the loop only ever runs under grad, inference always runs the full fixed length,
+or you have not measured a difference between the two variants.
+
+---
