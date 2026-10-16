@@ -51,6 +51,14 @@ lsp = [
 mcp = [
     "mcp>=1.8.0",
 ]
+# `jaxlint plugin install|update|export|info` -- cisternal's shared plugin sub-app
+# (same surface as `bth plugin`, `mrx plugin`, `myxcel plugin`). Optional so the
+# PyPI install of the linter does not pull the agent-plugin toolchain. cisternal
+# requires Python >= 3.13; on 3.11/3.12 the extra is empty and `jaxlint plugin`
+# exits with an explanation.
+plugin = [
+    "cisternal>=0.1.1a15; python_version >= '3.13'",
+]
 
 [project.scripts]
 jaxlint = "jaxlint.cli.main:app"
@@ -76,11 +84,18 @@ python = ".venv"
 include = ["src"]
 respect-ignore-files = true
 
-# jaxlint.hlo imports jax, which ships only with the optional `hlo` extra. The
-# lint-test job installs lsp + mcp but not hlo (the merge-blocking `jax-hlo` job
-# covers that package with JAX installed), so jax is unresolvable there by design.
+# Optional-extra boundary modules, where an import is unresolvable in some envs by design:
+# - jaxlint.hlo imports jax (`hlo` extra). lint-test installs lsp + mcp but not hlo; the
+#   merge-blocking `jax-hlo` job covers that package with JAX installed.
+# - mcp/server.py imports mcp 2.x (MCPServer) with a 1.x fallback (FastMCP); only one
+#   resolves in any env (1.x on Python < 3.13, 2.x on >= 3.13 via the `plugin` extra).
+# - cli/plugin_command.py imports cisternal lazily (`plugin` extra, Python >= 3.13 only).
 [[tool.ty.overrides]]
-include = ["src/jaxlint/hlo/**"]
+include = [
+    "src/jaxlint/hlo/**",
+    "src/jaxlint/mcp/server.py",
+    "src/jaxlint/cli/plugin_command.py",
+]
 
 [tool.ty.overrides.rules]
 unresolved-import = "ignore"

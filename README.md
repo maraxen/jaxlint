@@ -33,6 +33,7 @@ Published builds (**HTML**, **PDF**, **htmlzip** per version):
 - `jaxlint version` — print package version
 - `jaxlint init` — print a starter `[jaxlint]` snippet for `jaxlint.toml`
 - `jaxlint hlo` — hints for optional `jaxlint.hlo` (requires `--extra hlo`)
+- `jaxlint plugin install|update|export|info` — install or update the jaxlint agent plugin (skills, agent, MCP server) via cisternal; requires the `plugin` extra on Python ≥ 3.13 (`uv tool install 'jaxlint[plugin,mcp]'`)
 
 **Language server:** install **`jaxlint[lsp]`**, then run **`jaxlint-lsp`** or **`python -m jaxlint.lsp`** (stdio; diagnostics-only v1). See **[docs/lsp.md](docs/lsp.md)**.
 

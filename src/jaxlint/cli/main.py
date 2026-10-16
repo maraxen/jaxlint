@@ -18,11 +18,18 @@ from jaxlint.core.doc.rubric_impl import RubricScorer
 from jaxlint.cli.skill_commands import skill_app
 from jaxlint.cli.setup_command import setup_cmd
 from jaxlint.cli.export_command import export_cmd
+from jaxlint.cli.plugin_command import plugin_cmd
 
 app = typer.Typer(help="JAX-oriented linting and doc quality", no_args_is_help=True)
 app.add_typer(skill_app, name="skill")
 app.command("setup")(setup_cmd)
 app.command("export")(export_cmd)
+# Forward every arg (including --help) to cisternal's plugin sub-app unparsed.
+app.command(
+    "plugin",
+    add_help_option=False,
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)(plugin_cmd)
 
 
 def _config_anchor(config: Path | None) -> Path:
@@ -49,8 +56,12 @@ def check_cmd(
         "--config",
         help="Directory to search from, or path to jaxlint.toml / pyproject.toml",
     ),
-    select: str | None = typer.Option(None, "--select", help="Comma-separated rule prefixes (override config)"),
-    ignore: str | None = typer.Option(None, "--ignore", help="Comma-separated rule prefixes to ignore"),
+    select: str | None = typer.Option(
+        None, "--select", help="Comma-separated rule prefixes (override config)"
+    ),
+    ignore: str | None = typer.Option(
+        None, "--ignore", help="Comma-separated rule prefixes to ignore"
+    ),
     jobs: int | None = typer.Option(
         None,
         "--jobs",
@@ -128,7 +139,9 @@ def doc_cmd(
 @app.command("score")
 def score_cmd(
     paths: list[Path] = typer.Argument(default=None, help="Python files to score"),
-    jsonl: Path | None = typer.Option(None, "--jsonl", help="Evaluate a .jsonl of generated docstrings"),
+    jsonl: Path | None = typer.Option(
+        None, "--jsonl", help="Evaluate a .jsonl of generated docstrings"
+    ),
     baseline: Path | None = typer.Option(None, "--baseline"),
     threshold: float | None = typer.Option(None, "--threshold"),
     config: Path | None = typer.Option(None, "--config"),
@@ -160,7 +173,11 @@ def score_cmd(
         current = load_jsonl_scores(jsonl)
         scores = [r["normalized_score"] for r in current]
         mean = sum(scores) / len(scores) if scores else 0.0
-        pr = sum(1 for r in current if r["normalized_score"] >= th) / len(current) if current else 0.0
+        pr = (
+            sum(1 for r in current if r["normalized_score"] >= th) / len(current)
+            if current
+            else 0.0
+        )
         typer.echo(f"Mean score: {mean:.3f}  pass rate (>={th}): {pr:.1%}  N={len(current)}")
         if baseline and baseline.exists():
             base = load_jsonl_scores(baseline)
