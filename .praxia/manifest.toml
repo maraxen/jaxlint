@@ -22,26 +22,6 @@ name     = "using-equinox"
 path     = "agent_assets/skills/using-equinox/SKILL.md"
 triggers = ["eqx.Module", "filter_jit", "filter_grad"]
 
-[[plugin.skills]]
-name     = "jax-debugging"
-path     = "agent_assets/skills/jax-debugging/SKILL.md"
-triggers = ["nan", "inf", "gradient explosion", "shape mismatch"]
-
-[[plugin.skills]]
-name     = "jax-performance"
-path     = "agent_assets/skills/jax-performance/SKILL.md"
-triggers = ["slow", "recompile", "tracing overhead", "XLA"]
-
-[[plugin.skills]]
-name     = "equinox-patterns"
-path     = "agent_assets/skills/equinox-patterns/SKILL.md"
-triggers = ["pytree", "filter", "eqx.tree_at", "partition"]
-
-[[plugin.skills]]
-name     = "jax-distributed"
-path     = "agent_assets/skills/jax-distributed/SKILL.md"
-triggers = ["pmap", "sharding", "mesh", "multi-device"]
-
 [[plugin.snippets]]
 name           = "jaxlint-always-on"
 path           = "agent_assets/snippets/jaxlint-rules.md"
