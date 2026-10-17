@@ -13,7 +13,18 @@
       }
     ],
     "commands": [],
-    "hook_specs": [],
+    "hook_specs": [
+      {
+        "content": "",
+        "event": "PostToolUse",
+        "matcher": "Write|Edit|MultiEdit",
+        "script": "jaxlint-hook",
+        "surfaces": [
+          "claude"
+        ],
+        "tier": ""
+      }
+    ],
     "marketplace": null,
     "mcp_servers": [
       {
@@ -27,7 +38,7 @@
     "metadata": {
       "description": "JAX/Equinox linting and usage guidance",
       "name": "jaxlint",
-      "version": "0.4.2"
+      "version": "0.4.3"
     },
     "skills": [
       {

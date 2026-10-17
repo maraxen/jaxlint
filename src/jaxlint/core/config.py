@@ -37,6 +37,7 @@ class LintConfig:
     cache_dir: Path | None = None
     severity_overrides: dict[str, Severity] = field(default_factory=dict)
     sarif_rule_docs_base: str | None = None
+    hook_block_on_error: bool = False
 
     @classmethod
     def default(cls) -> LintConfig:
@@ -243,6 +244,7 @@ def _lint_config_from_raw(raw: dict[str, Any], path: Path, *, section_label: str
         rubric_threshold=float(raw.get("rubric-threshold", 0.75)),
         severity_overrides=severity_overrides,
         sarif_rule_docs_base=sarif_rule_docs_base,
+        hook_block_on_error=bool(raw.get("hook-block-on-error", False)),
     )
 
     pf = raw.get("per-file-ignores") or {}
@@ -320,6 +322,7 @@ strict-shapes = false
 rubric-threshold = 0.75
 
 # cache-dir = ".jaxlint-cache"   # optional; resolved relative to the config file directory
+# hook-block-on-error = false   # jaxlint-hook: block the agent's edit on a NEW error-severity finding
 
 # Per-rule severity (after sensors); overrides strict-shapes / default rule severity.
 # [jaxlint.severity-overrides]

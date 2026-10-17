@@ -1,6 +1,6 @@
 [plugin]
 name            = "jaxlint"
-version         = "0.4.2"
+version         = "0.4.3"
 description     = "JAX/Equinox linting and usage guidance"
 requires_praxia = ">=1.0"
 
@@ -60,3 +60,14 @@ tools = ["jaxlint_check", "jaxlint_rules"]
 
 [plugin.export_command]
 claude_code = ["jaxlint", "export", "--surface", "claude_code", "--level", "user"]
+
+# PostToolUse hook: after an agent writes or edits a .py file, lint that one file and feed its NEW
+# findings back as context (blocking only with `hook-block-on-error = true`). For Claude, cisternal
+# treats `script` as a literal command and copies no file, so it must be a PATH console script of
+# the jaxlint install. It is a separate stdlib-only entry point (jaxlint.hooks.edit_hook) because it
+# runs after every Write/Edit/MultiEdit call; the rule engine is imported only for files that import JAX.
+[[plugin.hook_specs]]
+event    = "PostToolUse"
+matcher  = "Write|Edit|MultiEdit"
+script   = "jaxlint-hook"
+surfaces = ["claude"]
