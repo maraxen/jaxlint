@@ -201,3 +201,79 @@ cache-dir = ".jaxlint-cache"
     nested.mkdir()
     cfg = load_config(nested)
     assert cfg.cache_dir == (root / ".jaxlint-cache").resolve()
+
+
+@pytest.fixture
+def fresh_rule_hash(monkeypatch: pytest.MonkeyPatch):
+    """Clear the memoised rule-source hash around a test that swaps the source root."""
+    import jaxlint.core.cache as cache_mod
+
+    real = cache_mod.rule_source_hash
+    real.cache_clear()
+    yield cache_mod
+    real.cache_clear()
+
+
+@pytest.mark.unit
+def test_namespace_key_changes_when_rule_source_changes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fresh_rule_hash
+) -> None:
+    """Editing a rule module under core/ must move the namespace even though __version__ is unchanged."""
+    cache_mod = fresh_rule_hash
+    core = tmp_path / "core"
+    (core / "sensors").mkdir(parents=True)
+    (core / "sensors" / "loops.py").write_text("RULE = 1\n", encoding="utf-8")
+    monkeypatch.setattr(cache_mod, "_core_root", lambda: core)
+    cache_mod.rule_source_hash.cache_clear()
+
+    before = cache_mod.namespace_segment(LintConfig(), perf=True, doc=False, mathjx=False)
+    (core / "sensors" / "loops.py").write_text("RULE = 2\n", encoding="utf-8")
+    cache_mod.rule_source_hash.cache_clear()
+    after = cache_mod.namespace_segment(LintConfig(), perf=True, doc=False, mathjx=False)
+
+    assert before != after
+
+
+@pytest.mark.unit
+def test_namespace_key_is_stable_across_calls(fresh_rule_hash) -> None:
+    cache_mod = fresh_rule_hash
+    a = cache_mod.namespace_segment(LintConfig(), perf=True, doc=True, mathjx=False)
+    b = cache_mod.namespace_segment(LintConfig(), perf=True, doc=True, mathjx=False)
+    assert a == b
+    assert cache_mod.rule_source_hash() == cache_mod.rule_source_hash()
+
+
+@pytest.mark.unit
+def test_entry_written_under_old_rule_hash_is_not_returned(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fresh_rule_hash
+) -> None:
+    from jaxlint.core.cache import store_diagnostics, try_load_diagnostics
+    from jaxlint.core.diagnostic import Diagnostic
+
+    cache_mod = fresh_rule_hash
+    src = tmp_path / "mod.py"
+    src.write_text("x = 1\n", encoding="utf-8")
+    cache = tmp_path / "cache"
+    cfg = LintConfig()
+    sentinel = Diagnostic(
+        rule_id="JL999",
+        severity=Severity.ERROR,
+        message="stale",
+        path=src,
+        line=1,
+        col=0,
+    )
+
+    monkeypatch.setattr(cache_mod, "rule_source_hash", lambda: "old-rules")
+    store_diagnostics(
+        src, cfg=cfg, perf=True, doc=False, mathjx=False, cache_dir=cache, diagnostics=[sentinel]
+    )
+    assert try_load_diagnostics(
+        src, cfg=cfg, perf=True, doc=False, mathjx=False, cache_dir=cache
+    ) == [sentinel]
+
+    monkeypatch.setattr(cache_mod, "rule_source_hash", lambda: "new-rules")
+    assert (
+        try_load_diagnostics(src, cfg=cfg, perf=True, doc=False, mathjx=False, cache_dir=cache)
+        is None
+    )
