@@ -21,7 +21,7 @@ from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.doc.mathjax import mathjax_diagnostics
 from jaxlint.core.doc.sections import doc_diagnostics_from_source
 from jaxlint.core.parse_context import ParsedPythonFile, load_parsed_python_file, parse_python_source
-from jaxlint.core.rules import RULES
+from jaxlint.core.rules import RULE_FOLLOWUPS, RULES
 from jaxlint.core.sensors import perf_diagnostics_from_tree
 from jaxlint.core.suppression import filter_suppressed
 
@@ -179,6 +179,9 @@ def format_sarif(
             row["defaultConfiguration"] = {"level": sarif_level(_sev)}
         else:
             row["shortDescription"] = {"text": "Unknown or custom rule"}
+        followup = RULE_FOLLOWUPS.get(rid)
+        if followup is not None:
+            row["help"] = {"text": followup}
         if docs_base is not None:
             row["helpUri"] = f"{docs_base}/{rid}"
         rules.append(row)

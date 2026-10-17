@@ -128,7 +128,9 @@ def test_cache_namespace_change_misses_cache(fixtures_dir: Path, tmp_path: Path)
     ns_jl = namespace_segment(cfg_jl, perf=True, doc=False, mathjx=False)
     assert (cache / ns_jl).is_dir()
 
-    out = run_checks(paths, cfg=cfg_empty, perf=True, doc=False, mathjx=False, jobs=1, cache_dir=cache)
+    out = run_checks(
+        paths, cfg=cfg_empty, perf=True, doc=False, mathjx=False, jobs=1, cache_dir=cache
+    )
     assert not any(d.rule_id.startswith("JL") for d in out)
 
 
@@ -247,12 +249,13 @@ def test_namespace_key_is_stable_across_calls(fresh_rule_hash) -> None:
 def test_entry_written_under_old_rule_hash_is_not_returned(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fresh_rule_hash
 ) -> None:
-    from jaxlint.core.cache import store_diagnostics, try_load_diagnostics
+    from jaxlint.core.cache import content_digest, store_diagnostics, try_load_diagnostics
     from jaxlint.core.diagnostic import Diagnostic
 
     cache_mod = fresh_rule_hash
     src = tmp_path / "mod.py"
     src.write_text("x = 1\n", encoding="utf-8")
+    digest = content_digest(src.read_bytes())
     cache = tmp_path / "cache"
     cfg = LintConfig()
     sentinel = Diagnostic(
@@ -266,14 +269,35 @@ def test_entry_written_under_old_rule_hash_is_not_returned(
 
     monkeypatch.setattr(cache_mod, "rule_source_hash", lambda: "old-rules")
     store_diagnostics(
-        src, cfg=cfg, perf=True, doc=False, mathjx=False, cache_dir=cache, diagnostics=[sentinel]
+        src,
+        cfg=cfg,
+        perf=True,
+        doc=False,
+        mathjx=False,
+        cache_dir=cache,
+        content_sha256=digest,
+        diagnostics=[sentinel],
     )
     assert try_load_diagnostics(
-        src, cfg=cfg, perf=True, doc=False, mathjx=False, cache_dir=cache
+        src,
+        cfg=cfg,
+        perf=True,
+        doc=False,
+        mathjx=False,
+        cache_dir=cache,
+        content_sha256=digest,
     ) == [sentinel]
 
     monkeypatch.setattr(cache_mod, "rule_source_hash", lambda: "new-rules")
     assert (
-        try_load_diagnostics(src, cfg=cfg, perf=True, doc=False, mathjx=False, cache_dir=cache)
+        try_load_diagnostics(
+            src,
+            cfg=cfg,
+            perf=True,
+            doc=False,
+            mathjx=False,
+            cache_dir=cache,
+            content_sha256=digest,
+        )
         is None
     )
