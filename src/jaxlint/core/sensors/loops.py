@@ -6,6 +6,7 @@ import ast
 from pathlib import Path
 
 from jaxlint.core.diagnostic import Diagnostic, Severity
+from jaxlint.core.sensors._jax_names import alias_map, is_kernel_decorator
 
 
 def loop_diagnostics(tree: ast.Module, path: Path) -> list[Diagnostic]:
@@ -18,9 +19,14 @@ class LoopSensor(ast.NodeVisitor):
     def __init__(self, path: Path):
         self.path = path
         self.diagnostics: list[Diagnostic] = []
+        self.aliases: dict[str, str] = {}
+
+    def visit_Module(self, node: ast.Module) -> None:
+        self.aliases = alias_map(node)
+        self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        if _is_jax_kernel(node.decorator_list):
+        if any(is_kernel_decorator(d, self.aliases) for d in node.decorator_list):
             for child in ast.walk(node):
                 if isinstance(child, (ast.For, ast.While)):
                     self.diagnostics.append(
@@ -33,16 +39,3 @@ class LoopSensor(ast.NodeVisitor):
                         )
                     )
         self.generic_visit(node)
-
-
-def _is_jax_kernel(dec_list: list[ast.expr]) -> bool:
-    return any(_dec_is_grad_or_jit(d) for d in dec_list)
-
-
-def _dec_is_grad_or_jit(dec: ast.AST) -> bool:
-    if isinstance(dec, ast.Attribute) and dec.attr in ("jit", "grad"):
-        return True
-    return isinstance(dec, ast.Call) and isinstance(dec.func, ast.Attribute) and dec.func.attr in (
-        "jit",
-        "grad",
-    )

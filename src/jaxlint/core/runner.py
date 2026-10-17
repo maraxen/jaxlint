@@ -15,14 +15,15 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from jaxlint.core.cache import store_diagnostics, try_load_diagnostics
+from jaxlint.core.cache import content_digest, store_diagnostics, try_load_diagnostics
 from jaxlint.core.config import LintConfig, effective_severity, load_config, rule_enabled
 from jaxlint.core.diagnostic import Diagnostic, Severity
 from jaxlint.core.doc.mathjax import mathjax_diagnostics
 from jaxlint.core.doc.sections import doc_diagnostics_from_source
 from jaxlint.core.parse_context import ParsedPythonFile, load_parsed_python_file, parse_python_source
-from jaxlint.core.rules import RULES
+from jaxlint.core.rules import RULE_FOLLOWUPS, RULES
 from jaxlint.core.sensors import perf_diagnostics_from_tree
+from jaxlint.core.suppression import filter_suppressed
 
 SARIF_SCHEMA_URI = (
     "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
@@ -178,6 +179,9 @@ def format_sarif(
             row["defaultConfiguration"] = {"level": sarif_level(_sev)}
         else:
             row["shortDescription"] = {"text": "Unknown or custom rule"}
+        followup = RULE_FOLLOWUPS.get(rid)
+        if followup is not None:
+            row["help"] = {"text": followup}
         if docs_base is not None:
             row["helpUri"] = f"{docs_base}/{rid}"
         rules.append(row)
@@ -358,28 +362,37 @@ def _cached_diagnostics_for_file(
     mathjx: bool,
     cache_dir: Path | None,
 ) -> list[Diagnostic]:
-    if cache_dir is not None:
-        hit = try_load_diagnostics(
-            py,
-            cfg=cfg,
-            perf=perf,
-            doc=doc,
-            mathjx=mathjx,
-            cache_dir=cache_dir,
-        )
-        if hit is not None:
-            return hit
-    out = _diagnostics_for_file(py, cfg, perf=perf, doc=doc, mathjx=mathjx)
-    if cache_dir is not None:
-        store_diagnostics(
-            py,
-            cfg=cfg,
-            perf=perf,
-            doc=doc,
-            mathjx=mathjx,
-            cache_dir=cache_dir,
-            diagnostics=out,
-        )
+    if cache_dir is None:
+        return _diagnostics_for_file(py, cfg, perf=perf, doc=doc, mathjx=mathjx)
+    try:
+        raw = py.read_bytes()
+    except OSError:
+        return _diagnostics_for_file(py, cfg, perf=perf, doc=doc, mathjx=mathjx)
+    digest = content_digest(raw)
+    hit = try_load_diagnostics(
+        py,
+        cfg=cfg,
+        perf=perf,
+        doc=doc,
+        mathjx=mathjx,
+        cache_dir=cache_dir,
+        content_sha256=digest,
+    )
+    if hit is not None:
+        return hit
+    # Parse the same bytes that were hashed so the key always matches the diagnostics.
+    ctx = parse_python_source(py, raw.decode("utf-8"))
+    out = _diagnostics_from_parsed(py, cfg, ctx, perf=perf, doc=doc, mathjx=mathjx)
+    store_diagnostics(
+        py,
+        cfg=cfg,
+        perf=perf,
+        doc=doc,
+        mathjx=mathjx,
+        cache_dir=cache_dir,
+        content_sha256=digest,
+        diagnostics=out,
+    )
     return out
 
 
@@ -392,8 +405,24 @@ def _diagnostics_from_parsed(
     doc: bool,
     mathjx: bool,
 ) -> list[Diagnostic]:
-    """Shared per-file logic for a :class:`ParsedPythonFile` (disk or in-memory)."""
+    """Shared per-file logic for a :class:`ParsedPythonFile` (disk or in-memory).
 
+    This is the single funnel for CLI, LSP, MCP and the runner API: inline
+    ``# jaxlint: ignore[...]`` comments are applied here, after rule filtering.
+    """
+    raw = _unsuppressed_diagnostics_from_parsed(py, cfg, ctx, perf=perf, doc=doc, mathjx=mathjx)
+    return filter_suppressed(raw, ctx.source)
+
+
+def _unsuppressed_diagnostics_from_parsed(
+    py: Path,
+    cfg: LintConfig,
+    ctx: ParsedPythonFile,
+    *,
+    perf: bool,
+    doc: bool,
+    mathjx: bool,
+) -> list[Diagnostic]:
     out: list[Diagnostic] = []
     want_doc = doc or mathjx
 

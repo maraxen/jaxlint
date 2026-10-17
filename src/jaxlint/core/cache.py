@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -10,11 +11,43 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
+import jaxlint.core as _core_pkg
 from jaxlint import __version__
 from jaxlint.core.config import LintConfig
 from jaxlint.core.diagnostic import Diagnostic, Severity
 
-CACHE_FORMAT_VERSION = 2
+CACHE_FORMAT_VERSION = 3
+
+
+def _core_root() -> Path:
+    """Directory of the installed ``jaxlint/core`` package (wheel or editable)."""
+    return Path(_core_pkg.__file__).parent
+
+
+def _hash_rule_sources(root: Path) -> str:
+    """sha256 over sorted (relative posix path, bytes) of every ``.py`` under ``root``."""
+    files = sorted(
+        ((p.relative_to(root).as_posix(), p) for p in root.rglob("*.py") if p.is_file()),
+        key=lambda t: t[0],
+    )
+    h = hashlib.sha256()
+    for rel, p in files:
+        h.update(rel.encode("utf-8"))
+        h.update(b"\0")
+        h.update(p.read_bytes())
+        h.update(b"\0")
+    return h.hexdigest()
+
+
+@functools.cache
+def rule_source_hash() -> str:
+    """Hash of the rule implementation source, computed once per process.
+
+    Keys the disk cache so that editing a rule (or any module feeding diagnostics)
+    invalidates entries even when ``__version__`` is unchanged, as happens with
+    editable installs.
+    """
+    return _hash_rule_sources(_core_root())
 
 
 def _canonical_config_dict(cfg: LintConfig) -> dict[str, Any]:
@@ -51,13 +84,23 @@ def namespace_segment(
         "jaxlint_version": __version__,
         "mathjx": mathjx,
         "perf": perf,
+        "rule_source": rule_source_hash(),
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode()).hexdigest()
 
 
-def _entry_basename(py: Path, st: os.stat_result) -> str:
-    key = f"{py.resolve()}\0{st.st_mtime_ns}\0{st.st_size}".encode()
+def content_digest(raw: bytes) -> str:
+    """SHA-256 of a file's exact bytes; the cache key for its diagnostics."""
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _entry_basename(py: Path, content_sha256: str) -> str:
+    """Entries are keyed by resolved path and file *content*, never by mtime/size.
+
+    An in-place edit that keeps size and mtime (or a restored mtime) must miss.
+    """
+    key = f"{py.resolve()}\0{content_sha256}".encode()
     return hashlib.sha256(key).hexdigest()
 
 
@@ -103,16 +146,12 @@ def try_load_diagnostics(
     doc: bool,
     mathjx: bool,
     cache_dir: Path,
+    content_sha256: str,
 ) -> list[Diagnostic] | None:
-    """Return cached diagnostics if present and still valid; otherwise ``None``."""
-    try:
-        st = py.stat()
-    except OSError:
-        return None
-
+    """Return cached diagnostics for exactly this content, else ``None``."""
     ns = namespace_segment(cfg, perf=perf, doc=doc, mathjx=mathjx)
     root = cache_dir / ns
-    json_path, lock_path = _entry_paths(root, _entry_basename(py, st))
+    json_path, lock_path = _entry_paths(root, _entry_basename(py, content_sha256))
 
     if not json_path.is_file():
         return None
@@ -126,7 +165,7 @@ def try_load_diagnostics(
             return None
         if str(data.get("path")) != str(py.resolve()):
             return None
-        if int(data["mtime_ns"]) != st.st_mtime_ns or int(data["size"]) != st.st_size:
+        if str(data.get("content_sha256")) != content_sha256:
             return None
         raw_diags = data["diagnostics"]
         if not isinstance(raw_diags, list):
@@ -153,24 +192,19 @@ def store_diagnostics(
     doc: bool,
     mathjx: bool,
     cache_dir: Path,
+    content_sha256: str,
     diagnostics: list[Diagnostic],
 ) -> None:
     """Write cache entry; failures are silent (fail-open)."""
-    try:
-        st = py.stat()
-    except OSError:
-        return
-
     ns = namespace_segment(cfg, perf=perf, doc=doc, mathjx=mathjx)
     root = cache_dir / ns
-    json_path, lock_path = _entry_paths(root, _entry_basename(py, st))
+    json_path, lock_path = _entry_paths(root, _entry_basename(py, content_sha256))
 
     envelope = {
+        "content_sha256": content_sha256,
         "diagnostics": [_diagnostic_to_obj(d) for d in diagnostics],
         "format": CACHE_FORMAT_VERSION,
-        "mtime_ns": st.st_mtime_ns,
         "path": str(py.resolve()),
-        "size": st.st_size,
     }
     body = json.dumps(envelope, separators=(",", ":"), sort_keys=True)
 
@@ -184,12 +218,6 @@ def store_diagnostics(
     tmp_path = json_path.with_suffix(json_path.suffix + ".tmp")
     try:
         with _file_lock(lock_path, exclusive=True):
-            try:
-                st2 = py.stat()
-            except OSError:
-                return
-            if st2.st_mtime_ns != st.st_mtime_ns or st2.st_size != st.st_size:
-                return
             tmp_path.write_text(body, encoding="utf-8")
             os.replace(tmp_path, json_path)
     except OSError:

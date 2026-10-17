@@ -6,6 +6,7 @@ import ast
 from pathlib import Path
 
 from jaxlint.core.diagnostic import Diagnostic, Severity
+from jaxlint.core.sensors._jax_names import alias_map, is_kernel_decorator
 
 
 def purity_diagnostics(tree: ast.Module, path: Path) -> list[Diagnostic]:
@@ -18,9 +19,14 @@ class PuritySensor(ast.NodeVisitor):
     def __init__(self, path: Path):
         self.path = path
         self.diagnostics: list[Diagnostic] = []
+        self.aliases: dict[str, str] = {}
+
+    def visit_Module(self, node: ast.Module) -> None:
+        self.aliases = alias_map(node)
+        self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        if _is_jax_kernel(node.decorator_list):
+        if any(is_kernel_decorator(d, self.aliases) for d in node.decorator_list):
             for child in ast.walk(node):
                 if isinstance(child, ast.Call) and isinstance(child.func, ast.Name):
                     if child.func.id in ("print", "open"):
@@ -34,16 +40,3 @@ class PuritySensor(ast.NodeVisitor):
                             )
                         )
         self.generic_visit(node)
-
-
-def _is_jax_kernel(dec_list: list[ast.expr]) -> bool:
-    return any(_dec_jit_grad(d) for d in dec_list)
-
-
-def _dec_jit_grad(d: ast.expr) -> bool:
-    if isinstance(d, ast.Attribute) and d.attr in ("jit", "grad"):
-        return True
-    return isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute) and d.func.attr in (
-        "jit",
-        "grad",
-    )
