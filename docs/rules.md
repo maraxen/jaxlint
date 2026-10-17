@@ -23,6 +23,23 @@ Configure rules via **`[jaxlint]`** / **`[tool.jaxlint]`** (see [configuration.m
 | JM002 | error | Malformed LaTeX/MathJax structure | `tests/fixtures/jm002_bad_latex.py` |
 | JM003 | warning | Large `$$` math block with little prose | `tests/fixtures/jm003_large_math.py` |
 
+## Suppressing a diagnostic inline
+
+Add a comment on the line a diagnostic is reported on:
+
+```python
+for i in range(3):  # jaxlint: ignore[JL003]
+    x = x + i
+y = x / 2  # jaxlint: ignore[JL012]
+z = x / 3  # jaxlint: ignore            (bare: all rules on this line)
+```
+
+- Rule IDs are case-sensitive; whitespace inside the brackets is ignored.
+- Only the reported line is affected. A comment on the `def` line does not silence a loop on a later line.
+- Unknown IDs are ignored silently.
+- Comments are found with `tokenize`, so `# jaxlint: ignore` inside a string literal has no effect.
+- The filter runs for the CLI, the LSP, the MCP server and `run_checks`, and the disk cache is keyed on file content, so an added comment takes effect immediately.
+
 ## Detailed descriptions
 
 | ID | Description |
