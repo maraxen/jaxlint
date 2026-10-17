@@ -1,8 +1,8 @@
 ---
 name: jax-port
 description: Use when porting a numerical algorithm, model, or training loop from NumPy, PyTorch, or TensorFlow to JAX — including vendoring a reference implementation, decomposing math before coding, structuring graded parity tests, defining data contracts with jaxtyping, porting PyTorch nn.Module to Equinox, converting stateful PRNG to jax.random, handling dynamic shapes with padding/masking, and managing the JIT boundary for logging and data loading.
+when_to_use: 'Triggers: jax-port, numpy-to-jax, pytorch-to-jax, tensorflow-to-jax, parity-test.'
 ---
-
 # JAX Porting
 
 ## Overview

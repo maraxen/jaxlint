@@ -1,8 +1,8 @@
 ---
 name: using-orbax
 description: Use when saving/restoring model checkpoints in JAX — CheckpointManager setup, save/restore patterns, async safety, and multi-host considerations.
+when_to_use: 'Triggers: orbax, CheckpointManager, checkpoint restore.'
 ---
-
 # using-orbax
 
 ## When to use

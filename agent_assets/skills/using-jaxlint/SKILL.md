@@ -1,8 +1,8 @@
 ---
 name: using-jaxlint
 description: Use when running jaxlint checks, interpreting lint violations, fixing JL-rule errors, or integrating jaxlint into a JAX workflow.
+when_to_use: 'Triggers: jaxlint, lint, jax rule.'
 ---
-
 # using-jaxlint
 
 Jaxlint is a JAX-oriented linter that catches performance anti-patterns, API misuse, and documentation quality issues.

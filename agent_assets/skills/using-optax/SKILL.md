@@ -1,6 +1,7 @@
 ---
 name: using-optax
 description: Use when defining, initializing, composing, or debugging Optax optimizers — GradientTransformation usage, custom optimizers, learning rate schedules, gradient clipping, or weight decay.
+when_to_use: 'Triggers: optax, GradientTransformation, learning rate schedule.'
 ---
 # using-optax
 

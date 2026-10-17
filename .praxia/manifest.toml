@@ -10,42 +10,34 @@ command = ["jaxlint-mcp"]
 [[plugin.skills]]
 name     = "using-jaxlint"
 path     = "agent_assets/skills/using-jaxlint/SKILL.md"
-triggers = ["jaxlint", "lint", "jax rule"]
 
 [[plugin.skills]]
 name     = "using-jax"
 path     = "agent_assets/skills/using-jax/SKILL.md"
-triggers = ["tracer error", "jit", "vmap", "NaN", "recompile"]
 
 [[plugin.skills]]
 name     = "using-equinox"
 path     = "agent_assets/skills/using-equinox/SKILL.md"
-triggers = ["eqx.Module", "filter_jit", "filter_grad"]
 
 [[plugin.skills]]
 name     = "developing-composable-jax"
 path     = "agent_assets/skills/developing-composable-jax/SKILL.md"
-triggers = ["composable-jax", "module-diverging", "branching __call__", "swappable implementation"]
 
 [[plugin.skills]]
 name     = "exporting-jax"
 path     = "agent_assets/skills/exporting-jax/SKILL.md"
-triggers = ["jax.export", "StableHLO", "IREE", "AOT compile"]
 
 [[plugin.skills]]
 name     = "using-optax"
 path     = "agent_assets/skills/using-optax/SKILL.md"
-triggers = ["optax", "GradientTransformation", "learning rate schedule"]
 
 [[plugin.skills]]
 name     = "using-orbax"
 path     = "agent_assets/skills/using-orbax/SKILL.md"
-triggers = ["orbax", "CheckpointManager", "checkpoint restore"]
 
 [[plugin.skills]]
 name     = "jax-port"
 path     = "agent_assets/skills/jax-port/SKILL.md"
-triggers = ["jax-port", "numpy-to-jax", "pytorch-to-jax", "tensorflow-to-jax", "parity-test"]
 
 [[plugin.snippets]]
 name           = "jaxlint-always-on"
