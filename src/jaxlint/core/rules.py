@@ -28,12 +28,18 @@ RULES: list[tuple[str, Severity, str]] = [
     ("JM002", Severity.ERROR, "Malformed LaTeX structure in MathJax region."),
     ("JL021", Severity.INFO, "Host loop over replicates/resamples — batch the replicate axis."),
     ("JM003", Severity.WARNING, "Large math block with little surrounding prose."),
+    ("JL023", Severity.INFO, "Per-iteration host sync on a device value inside a host loop (src/ by default)."),
 ]
 
 # rule_id -> what to do after the rule fires. Host-side rules name a measurement step:
 # a static suspect is confirmed or cleared by `xtrax profile` (spec 261016, Workstream 1).
 # Emitted as SARIF ``help`` text; rules without an entry carry no followup.
 RULE_FOLLOWUPS: dict[str, str] = {
+    "JL023": (
+        "Confirm with `xtrax profile`: a large untraced wall time relative to device time with "
+        "exec/element >= 0.5 indicates per-iteration syncs. Fix by accumulating on device "
+        "(lax.scan / vmap) and calling device_get once after the loop."
+    ),
     "JL022": "Confirm with `xtrax profile`: steady-state n_compilations > 0 per unit is the retrace signature. Fix by building the jitted function once outside the loop and passing loop-varying values as arguments.",
     "JL021": "Confirm with `xtrax profile <entrypoint> --scale-axis <replicate axis>`: exec/element >= 0.5 is the host-loop signature. Fix by batching the replicate axis (jax.vmap, or batched NumPy/einsum on host) and test batched == looped output.",
 }
