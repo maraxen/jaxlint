@@ -1,8 +1,8 @@
 ---
 name: using-jax
 description: Use when writing or modifying JAX code — tracer errors, NaN debugging, recompilation issues, memory pressure, or jaxlint rule violations — and before writing any loop over replicates, bootstrap resamples, pairs, edges, cells or frames, or launching a numerical run expected to take more than a few minutes (vectorization + production-shape profiling discipline).
+when_to_use: 'Triggers: tracer error, jit, vmap, NaN, recompile.'
 ---
-
 # using-jax
 
 ## When to Use This Skill

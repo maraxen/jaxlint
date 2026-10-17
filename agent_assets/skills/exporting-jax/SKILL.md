@@ -1,8 +1,8 @@
 ---
 name: exporting-jax
 description: Use when exporting a JAX function to StableHLO with jax.export — static and symbolic shapes, serialization, export parity, Equinox export, checkify, or auditing an exported graph with jaxlint[hlo]. For IREE, WASM, WebGPU or ONNX deployment targets, see xtrax's export reference.
+when_to_use: 'Triggers: jax.export, StableHLO, IREE, AOT compile.'
 ---
-
 # exporting-jax
 
 Export JAX programs to StableHLO with `jax.export`: the portable, serializable artifact that
