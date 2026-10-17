@@ -5,7 +5,6 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-import pytest
 
 from jaxlint.core.config import LintConfig
 from jaxlint.core.diagnostic import Diagnostic, Severity
