@@ -990,7 +990,7 @@ wheels = [
 
 [[package]]
 name = "jaxlint"
-version = "0.1.0a1"
+version = "0.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "griffe" },
