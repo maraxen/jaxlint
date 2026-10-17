@@ -1,3 +1,4 @@
+# jaxlint-expect: JL003, JL004, JL005
 """JL003/JL004/JL005 under a bare @jit imported from jax (from-import form)."""
 
 import jax.numpy as jnp

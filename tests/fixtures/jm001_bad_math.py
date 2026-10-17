@@ -1,3 +1,4 @@
+# jaxlint-expect: JD002, JM001
 """Doc with bad math."""
 
 

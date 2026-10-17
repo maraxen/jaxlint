@@ -1,3 +1,4 @@
+# jaxlint-expect: JL002
 """JL002: short @jax.jit helper."""
 
 import jax

@@ -26,6 +26,7 @@ RULES: list[tuple[str, Severity, str]] = [
     ("JD005", Severity.WARNING, "Function has return annotation but docstring lacks Returns section."),
     ("JM001", Severity.ERROR, "Math delimiter imbalance or invalid $/$$ pairing (outside code fences)."),
     ("JM002", Severity.ERROR, "Malformed LaTeX structure in MathJax region."),
+    ("JL021", Severity.INFO, "Host loop over replicates/resamples — batch the replicate axis."),
     ("JM003", Severity.WARNING, "Large math block with little surrounding prose."),
 ]
 
@@ -34,6 +35,7 @@ RULES: list[tuple[str, Severity, str]] = [
 # Emitted as SARIF ``help`` text; rules without an entry carry no followup.
 RULE_FOLLOWUPS: dict[str, str] = {
     "JL022": "Confirm with `xtrax profile`: steady-state n_compilations > 0 per unit is the retrace signature. Fix by building the jitted function once outside the loop and passing loop-varying values as arguments.",
+    "JL021": "Confirm with `xtrax profile <entrypoint> --scale-axis <replicate axis>`: exec/element >= 0.5 is the host-loop signature. Fix by batching the replicate axis (jax.vmap, or batched NumPy/einsum on host) and test batched == looped output.",
 }
 
 KNOWN_RULE_IDS: frozenset[str] = frozenset(rule_id for rule_id, _, _ in RULES)
