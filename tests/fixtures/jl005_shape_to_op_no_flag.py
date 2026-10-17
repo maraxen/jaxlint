@@ -1,3 +1,4 @@
+# jaxlint-expect: JD002, JL002
 """JL005 false-positive regression: .shape passed to shape-consuming ops should NOT be flagged."""
 
 import jax

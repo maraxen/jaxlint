@@ -1,3 +1,4 @@
+# jaxlint-expect: JL002, JL003
 """JL003: Python loop inside JAX kernel."""
 
 import jax

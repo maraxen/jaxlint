@@ -1,3 +1,4 @@
+# jaxlint-expect: JL002, JL005
 """JL005: .shape introspection inside kernel."""
 
 import jax

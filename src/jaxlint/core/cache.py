@@ -67,6 +67,7 @@ def _canonical_config_dict(cfg: LintConfig) -> dict[str, Any]:
         "severity_overrides": {k: cfg.severity_overrides[k].value for k in sorted(cfg.severity_overrides.keys())},
         "strict_shapes": cfg.strict_shapes,
         "host_loop_jnp_ops": cfg.host_loop_jnp_ops,
+        "host_sync_everywhere": cfg.host_sync_everywhere,
     }
 
 

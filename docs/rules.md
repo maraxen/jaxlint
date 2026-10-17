@@ -15,6 +15,9 @@ Configure rules via **`[jaxlint]`** / **`[tool.jaxlint]`** (see [configuration.m
 | JL011 | warning | `ShardingSpec` usage | `tests/fixtures/jl011_sharding_spec.py` |
 | JL012 | warning | Bare `/` in JIT kernel | `tests/fixtures/jl012_div_jit.py` |
 | JL020 | info | Host `for` loop calls a jitted fn or `jnp` op per element and collects results | `tests/fixtures/jl020_host_loop_jitted.py` |
+| JL023 | info | Device value forced to host (`.item()`, `float(x)`, `np.asarray`, `block_until_ready`, ...) inside a host loop; `src/` by default | `tests/fixtures/src/jl023_per_iteration_sync.py` |
+| JL022 | warning | jit-family wrap of a fresh lambda/partial/def inside a loop | `tests/fixtures/jl022_fresh_jit_in_loop.py` |
+| JL021 | info | Host loop over replicates/resamples; batch the replicate axis | `tests/fixtures/jl021_bootstrap_loop.py` |
 | JD001 | error | Public function/class missing docstring | `tests/fixtures/jd001_missing_docstring.py` |
 | JD002 | error | Missing required doc section (`required-sections`) | `tests/fixtures/jd002_missing_parameters.py` |
 | JD003 | warning | Section order disagrees with `section-order` | `tests/fixtures/jd003_section_order.py` |
@@ -54,6 +57,9 @@ z = x / 3  # jaxlint: ignore            (bare: all rules on this line)
 | JL011 | `ShardingSpec` is legacy; prefer `NamedSharding` with an explicit mesh. |
 | JL012 | Division may introduce NaNs; consider guarded reciprocals where denominators vanish. |
 | JL020 | Host loop dispatches a jitted function or `jnp` op per element and collects results; batch with `jax.vmap`. Local jit names only; loops with carries or timing calls are exempt. |
+| JL023 | Each iteration of a host-side loop blocks on a device-to-host transfer. Keep values on device and transfer once after the loop. Benchmark loops that time with `time.perf_counter` / `timeit` are skipped. |
+| JL022 | A jit-family wrap (`jax.jit`, `eqx.filter_jit`, ...) of a callable created per iteration (lambda, `partial`, nested `def`) retraces every iteration. Fires only when the callable depends on nothing loop-varying. |
+| JL021 | Host-side loop over replicates/resamples (bootstrap, permutation, seeds) that accumulates per-iteration results; batch the replicate axis (`jax.vmap` / batched NumPy) and confirm with `xtrax profile`. |
 | JD001 | Public API should document intent; private names (`_*`) ignored except dunders. |
 | JD002 | Enforces `required-sections`, including special cases like Pseudocode/Hardware Notes. |
 | JD003 | Parsed section kinds appear out of the configured canonical order (`section-order`). |
