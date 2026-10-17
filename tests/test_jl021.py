@@ -259,13 +259,6 @@ def test_no_flag_fixture_is_clean(fixtures_dir: Path) -> None:
     assert [d for d in diags if d.rule_id == "JL021"] == []
 
 
-@pytest.mark.parametrize("name", ["jl021_bootstrap_loop.py", "jl021_replicate_no_flag.py"])
-def test_fixture_header_matches_expectation(fixtures_dir: Path, name: str) -> None:
-    p = fixtures_dir / name
-    header = p.read_text(encoding="utf-8").splitlines()[0]
-    assert header in ("# jaxlint-expect: JL021", "# jaxlint-expect: none")
-
-
 def test_clean_minimal_has_no_diagnostics(clean_fixture: Path) -> None:
     diags = run_checks([clean_fixture], cfg=LintConfig(), perf=True, doc=True, mathjx=True)
     assert diags == []

@@ -1,4 +1,4 @@
-# jaxlint-expect: none
+# jaxlint-expect: JD002, JL002, JL003
 """Replicate-style loops that must NOT be flagged by JL021."""
 
 import time

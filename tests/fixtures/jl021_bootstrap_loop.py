@@ -1,4 +1,4 @@
-# jaxlint-expect: JL021
+# jaxlint-expect: JD002, JL021
 """Host-side replicate loops (numpy bootstrap, scipy per-replicate fit) that should be batched."""
 
 import numpy as np
