@@ -18,6 +18,7 @@ RULES: list[tuple[str, Severity, str]] = [
     ("JL010", Severity.WARNING, "`jnp.float64` — prefer f32/bf16 unless double precision is required."),
     ("JL011", Severity.WARNING, "`ShardingSpec` — prefer NamedSharding + Mesh."),
     ("JL012", Severity.WARNING, "Division `/` in JIT kernel — consider safe reciprocal if divisor may be zero."),
+    ("JL020", Severity.INFO, "Host loop calls a jitted fn or jnp op per element and collects results (batch with jax.vmap)."),
     ("JD001", Severity.ERROR, "Public function or class has no docstring."),
     ("JD002", Severity.ERROR, "Docstring missing required section."),
     ("JD003", Severity.WARNING, "Section order does not match canonical order for style."),
@@ -32,6 +33,7 @@ RULES: list[tuple[str, Severity, str]] = [
 # a static suspect is confirmed or cleared by `xtrax profile` (spec 261016, Workstream 1).
 # Emitted as SARIF ``help`` text; rules without an entry carry no followup.
 RULE_FOLLOWUPS: dict[str, str] = {}
+RULE_FOLLOWUPS["JL020"] = "Confirm with `xtrax profile <entrypoint> --scale-axis <loop axis>`: exec/element >= 0.5 is the host-loop signature (calibrated on CPU: host loops >= 3.0, batched <= 0.13). Fix with jax.vmap (or xtrax ChunkedMap for memory-bounded batches) and test batched == looped output."
 
 KNOWN_RULE_IDS: frozenset[str] = frozenset(rule_id for rule_id, _, _ in RULES)
 

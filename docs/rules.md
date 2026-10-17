@@ -14,6 +14,7 @@ Configure rules via **`[jaxlint]`** / **`[tool.jaxlint]`** (see [configuration.m
 | JL010 | warning | `jnp.float64` usage | `tests/fixtures/jl010_float64.py` |
 | JL011 | warning | `ShardingSpec` usage | `tests/fixtures/jl011_sharding_spec.py` |
 | JL012 | warning | Bare `/` in JIT kernel | `tests/fixtures/jl012_div_jit.py` |
+| JL020 | info | Host `for` loop calls a jitted fn or `jnp` op per element and collects results | `tests/fixtures/jl020_host_loop_jitted.py` |
 | JD001 | error | Public function/class missing docstring | `tests/fixtures/jd001_missing_docstring.py` |
 | JD002 | error | Missing required doc section (`required-sections`) | `tests/fixtures/jd002_missing_parameters.py` |
 | JD003 | warning | Section order disagrees with `section-order` | `tests/fixtures/jd003_section_order.py` |
@@ -52,6 +53,7 @@ z = x / 3  # jaxlint: ignore            (bare: all rules on this line)
 | JL010 | `float64` doubles memory and slows many GPU kernels versus `float32`/`bfloat16`. |
 | JL011 | `ShardingSpec` is legacy; prefer `NamedSharding` with an explicit mesh. |
 | JL012 | Division may introduce NaNs; consider guarded reciprocals where denominators vanish. |
+| JL020 | Host loop dispatches a jitted function or `jnp` op per element and collects results; batch with `jax.vmap`. Local jit names only; loops with carries or timing calls are exempt. |
 | JD001 | Public API should document intent; private names (`_*`) ignored except dunders. |
 | JD002 | Enforces `required-sections`, including special cases like Pseudocode/Hardware Notes. |
 | JD003 | Parsed section kinds appear out of the configured canonical order (`section-order`). |
