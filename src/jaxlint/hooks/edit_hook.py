@@ -17,7 +17,9 @@ A finding is "new" when its identity (rule id, message, sha256 of its source lin
 present at the previous check of the same file. Line numbers are not part of the identity, so
 an edit that shifts lines does not re-announce old findings. The identities live in
 ``<cache-dir>/edit-hook/<sha256 of resolved path>.json``, where ``cache-dir`` is the project's
-``cache-dir`` setting; with no cache dir configured every finding counts as new.
+``cache-dir`` setting. With no cache dir configured there is no state, so an ``Edit`` or
+``MultiEdit`` reports only findings on lines the edit wrote (``new_string``), and a ``Write``
+reports every finding. The hook never picks a state location of its own.
 
 Exit code 2 is never used: a block is a JSON decision, and any internal error is one line on
 stderr with exit 0.
@@ -44,8 +46,12 @@ _JAX_IMPORT = re.compile(
 )
 
 
-def _read_target(stdin: TextIO) -> Path | None:
-    """Return the edited ``.py`` path from the hook payload, or None when there is nothing to lint."""
+def _read_target(stdin: TextIO) -> tuple[Path, set[str] | None] | None:
+    """Return the edited ``.py`` path and the stripped lines the edit wrote.
+
+    The line set is None for a ``Write`` (the whole file is new) or an unrecognised payload
+    shape. Returns None when there is nothing to lint.
+    """
     try:
         payload = json.loads(stdin.read())
     except (ValueError, OSError):
@@ -59,7 +65,21 @@ def _read_target(stdin: TextIO) -> Path | None:
     if not isinstance(file_path, str) or not file_path.endswith(".py"):
         return None
     path = Path(file_path)
-    return path if path.is_file() else None
+    if not path.is_file():
+        return None
+    written: list[str] = []
+    if isinstance(tool_input.get("new_string"), str):
+        written.append(tool_input["new_string"])
+    edits = tool_input.get("edits")
+    if isinstance(edits, list):
+        written.extend(
+            e["new_string"]
+            for e in edits
+            if isinstance(e, dict) and isinstance(e.get("new_string"), str)
+        )
+    if not written:
+        return path, None
+    return path, {s for text in written for line in text.splitlines() if (s := line.strip())}
 
 
 def _identity(rule_id: str, message: str, line_text: str) -> tuple[str, str, str]:
@@ -119,7 +139,7 @@ def _format_text(source: Path, new: list[Any], followups: dict[str, str]) -> str
     return "\n".join(out)
 
 
-def _check(source: Path, stdout: TextIO) -> None:
+def _check(source: Path, written: set[str] | None, stdout: TextIO) -> None:
     # Deferred imports: the rule engine is loaded only for a file that imports JAX.
     from jaxlint.core.config import load_config
     from jaxlint.core.rules import RULE_FOLLOWUPS
@@ -137,7 +157,11 @@ def _check(source: Path, stdout: TextIO) -> None:
     remaining = previous.copy()
     new: list[Any] = []
     for d, ident in zip(diags, identities):
-        if remaining[ident] > 0:
+        if state_file is None and written is not None:
+            # Stateless: only lines this edit wrote are new.
+            if _line_text(lines, d.line).strip() in written:
+                new.append(d)
+        elif remaining[ident] > 0:
             remaining[ident] -= 1
         else:
             new.append(d)
@@ -161,16 +185,17 @@ def _check(source: Path, stdout: TextIO) -> None:
 
 
 def _run(stdin: TextIO, stdout: TextIO) -> None:
-    source = _read_target(stdin)
-    if source is None:
+    target = _read_target(stdin)
+    if target is None:
         return
+    source, written = target
     try:
         raw = source.read_bytes()
     except OSError:
         return
     if not _JAX_IMPORT.search(raw.decode("utf-8", errors="replace")):
         return
-    _check(source, stdout)
+    _check(source, written, stdout)
 
 
 def main() -> int:

@@ -122,6 +122,39 @@ def test_no_cache_dir_means_every_finding_is_new(
     assert not (project / "cache").exists()
 
 
+def _edit_payload(path: Path, new_string: str) -> str:
+    return json.dumps(
+        {
+            "tool_name": "Edit",
+            "tool_input": {"file_path": str(path), "old_string": "x", "new_string": new_string},
+        }
+    )
+
+
+def test_no_cache_dir_edit_reports_only_written_lines(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project = _project(tmp_path, cache=False)
+    target = _copy_fixture(project, "jl003_loop_kernel.py")
+    _, full = _run(monkeypatch, _payload(target, "Write"))
+    first = _context(full).splitlines()[0].removeprefix(f"{target}:")
+    line_no, rule_id = int(first.split()[0]), first.split()[1]
+    flagged = target.read_text().splitlines()[line_no - 1]
+
+    code, out = _run(monkeypatch, _edit_payload(target, flagged + "\n"))
+    assert code == 0 and rule_id in _context(out)
+    assert all(f"{target}:{line_no} " in ln for ln in _context(out).splitlines() if ln[0] != " ")
+
+
+def test_no_cache_dir_edit_elsewhere_is_silent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project = _project(tmp_path, cache=False)
+    target = _copy_fixture(project, "jl003_loop_kernel.py")
+    code, out = _run(monkeypatch, _edit_payload(target, "# an unrelated comment\n"))
+    assert (code, out) == (0, "")
+
+
 def test_garbage_stdin_exits_zero_silently(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
