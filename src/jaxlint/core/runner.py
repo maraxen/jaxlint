@@ -9,11 +9,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from io import StringIO, UnsupportedOperation
 from pathlib import Path
-
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
-from rich.text import Text
+from typing import TYPE_CHECKING
 
 from jaxlint.core.cache import content_digest, store_diagnostics, try_load_diagnostics
 from jaxlint.core.config import LintConfig, effective_severity, load_config, rule_enabled
@@ -24,6 +20,9 @@ from jaxlint.core.parse_context import ParsedPythonFile, load_parsed_python_file
 from jaxlint.core.rules import RULE_FOLLOWUPS, RULES
 from jaxlint.core.sensors import perf_diagnostics_from_tree
 from jaxlint.core.suppression import filter_suppressed
+
+if TYPE_CHECKING:
+    from rich.text import Text
 
 SARIF_SCHEMA_URI = (
     "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
@@ -242,6 +241,12 @@ def _osc8_file_link(uri: str, label: str) -> str:
 
 def format_rich(diagnostics: list[Diagnostic]) -> str:
     """Render diagnostics as a Rich panel + table (ASCII-safe when stdout is not a TTY)."""
+    # Imported here, not at module scope: ``jaxlint.core.runner`` is imported on
+    # every edit by the edit-hook path, and rich costs ~50 modules to import.
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+    from rich.text import Text
 
     tty = sys.stdout.isatty()
 
