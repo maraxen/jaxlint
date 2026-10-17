@@ -84,7 +84,11 @@ class FreshJitSensor(ast.NodeVisitor):
             self._report_if_independent(fresh, loop, call, wrapper)
 
     def _report_if_independent(
-        self, fresh: ast.AST, loop: ast.For | ast.AsyncFor | ast.While, at: ast.AST, wrapper: str
+        self,
+        fresh: ast.AST,
+        loop: ast.For | ast.AsyncFor | ast.While,
+        at: ast.expr | ast.stmt,
+        wrapper: str,
     ) -> None:
         if _free_names(fresh) & _loop_varying_names(loop):
             return
@@ -102,7 +106,7 @@ def _jit_decorator_wrapper(dec: ast.expr, aliases: dict[str, str]) -> str | None
     return head if head in JIT_FAMILY else None
 
 
-def _diagnostic(path: Path, node: ast.AST, wrapper: str) -> Diagnostic:
+def _diagnostic(path: Path, node: ast.expr | ast.stmt, wrapper: str) -> Diagnostic:
     return Diagnostic(
         "JL022",
         Severity.WARNING,
