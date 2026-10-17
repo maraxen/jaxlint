@@ -1,3 +1,4 @@
+# jaxlint-expect: JL002, JL004
 """JL004: print inside JAX kernel."""
 
 import jax

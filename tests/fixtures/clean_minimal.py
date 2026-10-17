@@ -1,3 +1,4 @@
+# jaxlint-expect: none
 """Module doc."""
 
 

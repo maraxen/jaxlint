@@ -1,3 +1,4 @@
+# jaxlint-expect: JD002
 """JD002: docstring lacks required Parameters."""
 
 import jax.numpy as jnp

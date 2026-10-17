@@ -1,3 +1,4 @@
+# jaxlint-expect: JL003, JL004, JL005
 """JL003/JL004/JL005 under an Equinox filter_jit decorator (alias form)."""
 
 import equinox as eqx

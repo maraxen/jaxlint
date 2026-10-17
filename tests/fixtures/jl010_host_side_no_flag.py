@@ -1,3 +1,4 @@
+# jaxlint-expect: JD002
 """JL010 false-positive regression: host-side f64 casts should NOT be flagged."""
 
 import jax.numpy as jnp
