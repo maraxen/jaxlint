@@ -1,3 +1,4 @@
+# jaxlint-expect: JD004
 """JD004: undocumented parameter."""
 
 

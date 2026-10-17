@@ -18,6 +18,7 @@ RULES: list[tuple[str, Severity, str]] = [
     ("JL010", Severity.WARNING, "`jnp.float64` — prefer f32/bf16 unless double precision is required."),
     ("JL011", Severity.WARNING, "`ShardingSpec` — prefer NamedSharding + Mesh."),
     ("JL012", Severity.WARNING, "Division `/` in JIT kernel — consider safe reciprocal if divisor may be zero."),
+    ("JL022", Severity.WARNING, "jit-family wrap of a fresh callable inside a loop (retraces every iteration)."),
     ("JD001", Severity.ERROR, "Public function or class has no docstring."),
     ("JD002", Severity.ERROR, "Docstring missing required section."),
     ("JD003", Severity.WARNING, "Section order does not match canonical order for style."),
@@ -25,6 +26,7 @@ RULES: list[tuple[str, Severity, str]] = [
     ("JD005", Severity.WARNING, "Function has return annotation but docstring lacks Returns section."),
     ("JM001", Severity.ERROR, "Math delimiter imbalance or invalid $/$$ pairing (outside code fences)."),
     ("JM002", Severity.ERROR, "Malformed LaTeX structure in MathJax region."),
+    ("JL021", Severity.INFO, "Host loop over replicates/resamples — batch the replicate axis."),
     ("JM003", Severity.WARNING, "Large math block with little surrounding prose."),
     ("JL023", Severity.INFO, "Per-iteration host sync on a device value inside a host loop (src/ by default)."),
 ]
@@ -38,6 +40,8 @@ RULE_FOLLOWUPS: dict[str, str] = {
         "exec/element >= 0.5 indicates per-iteration syncs. Fix by accumulating on device "
         "(lax.scan / vmap) and calling device_get once after the loop."
     ),
+    "JL022": "Confirm with `xtrax profile`: steady-state n_compilations > 0 per unit is the retrace signature. Fix by building the jitted function once outside the loop and passing loop-varying values as arguments.",
+    "JL021": "Confirm with `xtrax profile <entrypoint> --scale-axis <replicate axis>`: exec/element >= 0.5 is the host-loop signature. Fix by batching the replicate axis (jax.vmap, or batched NumPy/einsum on host) and test batched == looped output.",
 }
 
 KNOWN_RULE_IDS: frozenset[str] = frozenset(rule_id for rule_id, _, _ in RULES)
