@@ -23,6 +23,12 @@ reports every finding. The hook never picks a state location of its own.
 
 Exit code 2 is never used: a block is a JSON decision, and any internal error is one line on
 stderr with exit 0.
+
+Telemetry: when ``CISTERNAL_TELEMETRY`` is truthy (cisternal's rule, copied in
+``_telemetry_requested``), each hook run emits a ``jaxlint.hook.check`` span around the rule run and one
+``jaxlint.hook`` span with the run's results, both through cisternal. Span fields carry only the sha256 of the resolved
+path, never the path, the source or any message. When the variable is unset, cisternal is not
+imported at all.
 """
 
 from __future__ import annotations
@@ -32,7 +38,9 @@ import json
 import os
 import re
 import sys
+import time
 from collections import Counter
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -45,9 +53,112 @@ _JAX_IMPORT = re.compile(
     re.MULTILINE,
 )
 
+# Copy of cisternal's rule (src/cisternal/probe/telemetry_env.py:18-23, consumer_telemetry_enabled).
+# Kept here so the disabled path imports nothing from cisternal.
+_TELEMETRY_ENV = "CISTERNAL_TELEMETRY"
+_TELEMETRY_TRUTHY = frozenset({"1", "true", "yes", "all"})
+_TELEMETRY_CONSUMER = "jaxlint"
 
-def _read_target(stdin: TextIO) -> tuple[Path, set[str] | None] | None:
-    """Return the edited ``.py`` path and the stripped lines the edit wrote.
+
+def _telemetry_requested() -> bool:
+    raw = os.environ.get(_TELEMETRY_ENV, "").strip().lower()
+    if not raw:
+        return False
+    return raw in _TELEMETRY_TRUTHY or raw == _TELEMETRY_CONSUMER
+
+
+def _path_digest(source: Path) -> str:
+    """sha256 of the resolved path: the only form of the path that telemetry ever carries."""
+    return hashlib.sha256(str(source.resolve()).encode("utf-8")).hexdigest()
+
+
+class _SafeSpan(AbstractContextManager):
+    """Wraps a cisternal span so that a telemetry failure never reaches the hook.
+
+    An exception raised by the hook's own body is re-raised unchanged (cisternal's span
+    re-raises it too); any exception raised by cisternal is swallowed after one stderr line.
+    """
+
+    def __init__(self, owner: "_Telemetry", name: str, fields: dict[str, Any]) -> None:
+        self._owner = owner
+        self._name = name
+        self._fields = fields
+        self._cm: Any = None
+
+    def __enter__(self) -> None:
+        try:
+            self._cm = self._owner.span_fn(self._name, **self._fields)
+            self._cm.__enter__()
+        except Exception as exc:  # noqa: BLE001 - telemetry must never affect the hook
+            self._cm = None
+            self._owner.note_disabled(exc)
+
+    def __exit__(self, et: Any, ev: Any, tb: Any) -> bool:
+        cm, self._cm = self._cm, None
+        if cm is None:
+            return False
+        try:
+            cm.__exit__(et, ev, tb)
+        except Exception as exc:  # noqa: BLE001 - a body exception is re-raised by returning False
+            if exc is not ev:
+                self._owner.note_disabled(exc)
+        return False
+
+
+class _Telemetry:
+    """cisternal spans for one hook run. Constructed only when ``CISTERNAL_TELEMETRY`` is set."""
+
+    def __init__(self) -> None:
+        self.span_fn: Any = None
+        self._owns_pipeline = False
+        self._noted = False
+        try:
+            from cisternal.telemetry.span import span
+        except ImportError:
+            return
+        except Exception as exc:  # noqa: BLE001
+            self.note_disabled(exc)
+            return
+        self.span_fn = span
+        try:
+            import cisternal
+
+            if cisternal.get_pipeline() is None:
+                cisternal.init()
+                self._owns_pipeline = True
+        except ImportError:
+            self.span_fn = None
+        except Exception as exc:  # noqa: BLE001
+            self.span_fn = None
+            self.note_disabled(exc)
+
+    def note_disabled(self, exc: BaseException) -> None:
+        if not self._noted:
+            self._noted = True
+            sys.stderr.write(f"jaxlint-hook: telemetry disabled: {type(exc).__name__}\n")
+
+    def span(self, name: str, **fields: Any) -> AbstractContextManager[Any]:
+        if self.span_fn is None:
+            return nullcontext()
+        return _SafeSpan(self, name, fields)
+
+    def close(self) -> None:
+        if not self._owns_pipeline:
+            return
+        try:
+            from cisternal.telemetry.pipeline import shutdown_pipeline
+
+            shutdown_pipeline()
+        except Exception as exc:  # noqa: BLE001
+            self.note_disabled(exc)
+
+
+def _span(tel: _Telemetry | None, name: str, **fields: Any) -> AbstractContextManager[Any]:
+    return nullcontext() if tel is None else tel.span(name, **fields)
+
+
+def _read_target(stdin: TextIO) -> tuple[str, Path, set[str] | None] | None:
+    """Return the tool name, the edited ``.py`` path and the stripped lines the edit wrote.
 
     The line set is None for a ``Write`` (the whole file is new) or an unrecognised payload
     shape. Returns None when there is nothing to lint.
@@ -58,6 +169,8 @@ def _read_target(stdin: TextIO) -> tuple[Path, set[str] | None] | None:
         return None
     if not isinstance(payload, dict):
         return None
+    tool_name = payload.get("tool_name")
+    tool_name = tool_name if isinstance(tool_name, str) else ""
     tool_input = payload.get("tool_input")
     if not isinstance(tool_input, dict):
         return None
@@ -78,8 +191,12 @@ def _read_target(stdin: TextIO) -> tuple[Path, set[str] | None] | None:
             if isinstance(e, dict) and isinstance(e.get("new_string"), str)
         )
     if not written:
-        return path, None
-    return path, {s for text in written for line in text.splitlines() if (s := line.strip())}
+        return tool_name, path, None
+    return (
+        tool_name,
+        path,
+        {s for text in written for line in text.splitlines() if (s := line.strip())},
+    )
 
 
 def _identity(rule_id: str, message: str, line_text: str) -> tuple[str, str, str]:
@@ -139,7 +256,13 @@ def _format_text(source: Path, new: list[Any], followups: dict[str, str]) -> str
     return "\n".join(out)
 
 
-def _check(source: Path, written: set[str] | None, stdout: TextIO) -> None:
+def _check(
+    source: Path, written: set[str] | None, stdout: TextIO, tel: _Telemetry | None
+) -> tuple[int, int, bool]:
+    """Lint *source*, write any new findings to *stdout*.
+
+    Returns ``(n_findings, n_new, blocked)`` for the outer telemetry span.
+    """
     # Deferred imports: the rule engine is loaded only for a file that imports JAX.
     from jaxlint.core.config import load_config
     from jaxlint.core.rules import RULE_FOLLOWUPS
@@ -147,7 +270,8 @@ def _check(source: Path, written: set[str] | None, stdout: TextIO) -> None:
     from jaxlint.core.diagnostic import Severity
 
     cfg = load_config(source.resolve().parent)
-    diags = run_checks([source], cfg=cfg, jobs=1, cache_dir=cfg.cache_dir)
+    with _span(tel, "jaxlint.hook.check", path_sha256=_path_digest(source)):
+        diags = run_checks([source], cfg=cfg, jobs=1, cache_dir=cfg.cache_dir)
 
     lines = source.read_text(encoding="utf-8", errors="replace").splitlines()
     identities = [_identity(d.rule_id, d.message, _line_text(lines, d.line)) for d in diags]
@@ -173,29 +297,58 @@ def _check(source: Path, written: set[str] | None, stdout: TextIO) -> None:
             pass  # state is an optimisation; findings are still reported
 
     if not new:
-        return
+        return len(diags), 0, False
     text = _format_text(source, new, RULE_FOLLOWUPS)
-    if cfg.hook_block_on_error and any(d.severity == Severity.ERROR for d in new):
+    blocked = cfg.hook_block_on_error and any(d.severity == Severity.ERROR for d in new)
+    if blocked:
         payload: dict[str, Any] = {"decision": "block", "reason": text}
     else:
         payload = {
             "hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": text},
         }
     stdout.write(json.dumps(payload) + "\n")
+    return len(diags), len(new), bool(blocked)
 
 
-def _run(stdin: TextIO, stdout: TextIO) -> None:
+def _hook(stdin: TextIO, stdout: TextIO, tel: _Telemetry | None, facts: dict[str, Any]) -> None:
     target = _read_target(stdin)
     if target is None:
         return
-    source, written = target
+    tool_name, source, written = target
+    facts["tool_name"] = tool_name
+    facts["path_sha256"] = _path_digest(source)
     try:
         raw = source.read_bytes()
     except OSError:
         return
     if not _JAX_IMPORT.search(raw.decode("utf-8", errors="replace")):
         return
-    _check(source, written, stdout)
+    facts["jax_file"] = True
+    facts["n_findings"], facts["n_new"], facts["blocked"] = _check(source, written, stdout, tel)
+
+
+def _run(stdin: TextIO, stdout: TextIO) -> None:
+    tel = _Telemetry() if _telemetry_requested() else None
+    started = time.perf_counter()
+    facts: dict[str, Any] = {
+        "tool_name": "",
+        "path_sha256": "",
+        "jax_file": False,
+        "n_findings": 0,
+        "n_new": 0,
+        "blocked": False,
+    }
+    try:
+        _hook(stdin, stdout, tel, facts)
+    finally:
+        if tel is not None:
+            # cisternal fixes a span's fields when it is entered, so the outer span is emitted
+            # once the results are known; its elapsed_ms is measured here, not by the span.
+            if facts["path_sha256"]:
+                facts["elapsed_ms"] = round((time.perf_counter() - started) * 1000.0, 3)
+                with _span(tel, "jaxlint.hook", **facts):
+                    pass
+            tel.close()
 
 
 def main() -> int:
