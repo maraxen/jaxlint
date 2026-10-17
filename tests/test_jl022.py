@@ -27,7 +27,9 @@ def _expected(path: Path) -> str:
     first = path.read_text(encoding="utf-8").splitlines()[0]
     prefix = "# jaxlint-expect:"
     assert first.startswith(prefix), f"{path.name} lacks a jaxlint-expect header"
-    return first[len(prefix) :].strip()
+    ids = {i.strip() for i in first[len(prefix) :].split(",")}
+    # Headers list every rule the fixture triggers; this test only cares about JL022.
+    return "JL022" if "JL022" in ids else "none"
 
 
 @pytest.mark.unit
