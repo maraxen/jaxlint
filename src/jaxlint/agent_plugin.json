@@ -27,7 +27,7 @@
     "metadata": {
       "description": "JAX/Equinox linting and usage guidance",
       "name": "jaxlint",
-      "version": "0.4.1"
+      "version": "0.4.2"
     },
     "skills": [
       {
