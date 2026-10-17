@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -10,11 +11,43 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
+import jaxlint.core as _core_pkg
 from jaxlint import __version__
 from jaxlint.core.config import LintConfig
 from jaxlint.core.diagnostic import Diagnostic, Severity
 
 CACHE_FORMAT_VERSION = 3
+
+
+def _core_root() -> Path:
+    """Directory of the installed ``jaxlint/core`` package (wheel or editable)."""
+    return Path(_core_pkg.__file__).parent
+
+
+def _hash_rule_sources(root: Path) -> str:
+    """sha256 over sorted (relative posix path, bytes) of every ``.py`` under ``root``."""
+    files = sorted(
+        ((p.relative_to(root).as_posix(), p) for p in root.rglob("*.py") if p.is_file()),
+        key=lambda t: t[0],
+    )
+    h = hashlib.sha256()
+    for rel, p in files:
+        h.update(rel.encode("utf-8"))
+        h.update(b"\0")
+        h.update(p.read_bytes())
+        h.update(b"\0")
+    return h.hexdigest()
+
+
+@functools.cache
+def rule_source_hash() -> str:
+    """Hash of the rule implementation source, computed once per process.
+
+    Keys the disk cache so that editing a rule (or any module feeding diagnostics)
+    invalidates entries even when ``__version__`` is unchanged, as happens with
+    editable installs.
+    """
+    return _hash_rule_sources(_core_root())
 
 
 def _canonical_config_dict(cfg: LintConfig) -> dict[str, Any]:
@@ -51,6 +84,7 @@ def namespace_segment(
         "jaxlint_version": __version__,
         "mathjx": mathjx,
         "perf": perf,
+        "rule_source": rule_source_hash(),
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode()).hexdigest()
