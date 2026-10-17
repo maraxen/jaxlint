@@ -1,3 +1,4 @@
+# jaxlint-expect: JL002, JL012
 """JL012: division inside @jax.jit kernel."""
 
 import jax

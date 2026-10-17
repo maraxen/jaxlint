@@ -1,3 +1,4 @@
+# jaxlint-expect: JD001
 """JD001: missing docstring on public function."""
 
 

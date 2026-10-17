@@ -1,3 +1,4 @@
+# jaxlint-expect: JD002, JL002, JL005
 """JL001 false-positive regression: self-update scatter should NOT be flagged.
 
 Buffer-fill patterns like Q = Q.at[:, step].set(v) appear in lax.scan bodies

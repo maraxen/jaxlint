@@ -1,3 +1,4 @@
+# jaxlint-expect: JL010
 """JL010: jnp.float64 usage."""
 
 import jax.numpy as jnp
