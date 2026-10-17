@@ -22,7 +22,7 @@ def perf_diagnostics_from_tree(path: Path, cfg: LintConfig, tree: ast.Module) ->
     diagnostics.extend(purity_diagnostics(tree, path))
     diagnostics.extend(shape_diagnostics(tree, path, strict=cfg.strict_shapes))
     diagnostics.extend(best_practices_diagnostics(tree, path))
-    diagnostics.extend(host_loop_diagnostics(tree, path))
+    diagnostics.extend(host_loop_diagnostics(tree, path, jnp_ops=cfg.host_loop_jnp_ops))
     return diagnostics
 
 

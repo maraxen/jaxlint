@@ -1,7 +1,6 @@
 # jaxlint-expect: JL020
 import equinox as eqx
 import jax
-import jax.numpy as jnp
 
 
 @jax.jit
@@ -18,13 +17,6 @@ def run_jit_loop(rows):
     out = []
     for row in rows:  # hit
         out.append(scale(row))
-    return out
-
-
-def run_jnp_loop(rows):
-    out = []
-    for row in rows:  # hit
-        out.append(jnp.sum(row))
     return out
 
 
