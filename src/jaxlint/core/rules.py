@@ -25,13 +25,16 @@ RULES: list[tuple[str, Severity, str]] = [
     ("JD005", Severity.WARNING, "Function has return annotation but docstring lacks Returns section."),
     ("JM001", Severity.ERROR, "Math delimiter imbalance or invalid $/$$ pairing (outside code fences)."),
     ("JM002", Severity.ERROR, "Malformed LaTeX structure in MathJax region."),
+    ("JL021", Severity.INFO, "Host loop over replicates/resamples — batch the replicate axis."),
     ("JM003", Severity.WARNING, "Large math block with little surrounding prose."),
 ]
 
 # rule_id -> what to do after the rule fires. Host-side rules name a measurement step:
 # a static suspect is confirmed or cleared by `xtrax profile` (spec 261016, Workstream 1).
 # Emitted as SARIF ``help`` text; rules without an entry carry no followup.
-RULE_FOLLOWUPS: dict[str, str] = {}
+RULE_FOLLOWUPS: dict[str, str] = {
+    "JL021": "Confirm with `xtrax profile <entrypoint> --scale-axis <replicate axis>`: exec/element >= 0.5 is the host-loop signature. Fix by batching the replicate axis (jax.vmap, or batched NumPy/einsum on host) and test batched == looped output.",
+}
 
 KNOWN_RULE_IDS: frozenset[str] = frozenset(rule_id for rule_id, _, _ in RULES)
 
