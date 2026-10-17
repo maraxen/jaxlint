@@ -1,3 +1,4 @@
+# jaxlint-expect: JM002
 """JM002: malformed \\frac inside display math."""
 
 import jax.numpy as jnp

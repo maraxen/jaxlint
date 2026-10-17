@@ -1,3 +1,4 @@
+# jaxlint-expect: JD002, JL002
 """JL012 false-positive regression: provably non-zero divisors should NOT be flagged."""
 
 import jax

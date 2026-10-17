@@ -1,3 +1,4 @@
+# jaxlint-expect: JM003
 """JM003: display math block large relative to surrounding prose."""
 
 import jax.numpy as jnp

@@ -1,3 +1,4 @@
+# jaxlint-expect: JD002, JD005
 """JD005: return annotation without Returns section."""
 
 

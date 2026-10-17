@@ -1,3 +1,4 @@
+# jaxlint-expect: JD003
 """JD003: Returns section appears before Parameters (wrong canonical order)."""
 
 

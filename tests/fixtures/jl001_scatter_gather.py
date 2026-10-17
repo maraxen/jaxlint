@@ -1,3 +1,4 @@
+# jaxlint-expect: JD002, JL001, JL002
 import jax
 
 
