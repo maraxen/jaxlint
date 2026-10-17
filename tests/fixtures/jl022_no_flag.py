@@ -1,4 +1,4 @@
-# jaxlint-expect: none
+# jaxlint-expect: JD001
 """JL022 negatives: wraps that do not retrace per iteration, or whose callable varies per iteration."""
 
 import jax

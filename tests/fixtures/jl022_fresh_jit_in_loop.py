@@ -1,4 +1,4 @@
-# jaxlint-expect: JL022
+# jaxlint-expect: JD001, JL002, JL022
 """JL022: jit-family wrap of a fresh callable inside a host loop (retraces every iteration)."""
 
 import functools
