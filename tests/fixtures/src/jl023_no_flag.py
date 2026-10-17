@@ -1,4 +1,4 @@
-# jaxlint-expect: none
+# jaxlint-expect: JD001, JL002
 """JL023 negatives: host syncs that must not be flagged."""
 
 import time

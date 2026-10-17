@@ -83,7 +83,9 @@ def _host_scope_bodies(tree: ast.Module, aliases: dict[str, str]) -> list[list[a
 
 def _scope_walk(stmts: list[ast.stmt]) -> Iterator[ast.AST]:
     """Yield every node under ``stmts`` without descending into nested scopes."""
-    stack: list[ast.AST] = list(stmts)
+    # The barrier applies to the starting statements too: a module body must not walk
+    # into its top-level functions, which are scanned as scopes of their own.
+    stack: list[ast.AST] = [s for s in stmts if not isinstance(s, _SCOPE_BARRIERS)]
     while stack:
         node = stack.pop()
         yield node

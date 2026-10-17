@@ -1,4 +1,4 @@
-# jaxlint-expect: JL023
+# jaxlint-expect: JD001, JL002, JL023
 """JL023 positives: device values forced to host inside host-side loops."""
 
 import jax

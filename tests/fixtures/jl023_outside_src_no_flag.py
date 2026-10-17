@@ -1,4 +1,4 @@
-# jaxlint-expect: none
+# jaxlint-expect: JD001
 """JL023 default scope: the same positive pattern outside a src/ path must not fire."""
 
 import jax.numpy as jnp

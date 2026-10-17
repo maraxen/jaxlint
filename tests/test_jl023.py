@@ -88,3 +88,14 @@ def test_jl023_is_registered_as_info_with_followup() -> None:
     entries = {rid: sev for rid, sev, _ in RULES}
     assert entries["JL023"] is Severity.INFO
     assert "xtrax profile" in RULE_FOLLOWUPS["JL023"]
+
+
+def test_each_sync_reported_once() -> None:
+    """Module scope must not walk into function bodies (each site reported exactly once)."""
+
+    fixture = Path(__file__).parent / "fixtures" / "src" / "jl023_per_iteration_sync.py"
+    markers = fixture.read_text(encoding="utf-8").count("# sync-here")
+    diags = run_checks([fixture], cfg=LintConfig(), perf=True, doc=False, mathjx=False)
+    hits = [d for d in diags if d.rule_id == "JL023"]
+    assert len(hits) == markers
+    assert len({(d.line, d.col) for d in hits}) == markers
