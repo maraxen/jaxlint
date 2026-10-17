@@ -15,9 +15,11 @@ JL_ONLY = frozenset(["JL023"])
 
 def _expect(path: Path) -> str:
     first = path.read_text(encoding="utf-8").splitlines()[0]
-    m = re.fullmatch(r"# jaxlint-expect: (JL023|none)", first)
-    assert m, f"{path}: first line must be '# jaxlint-expect: JL023' or '... none'"
-    return m.group(1)
+    m = re.fullmatch(r"# jaxlint-expect: (.+)", first)
+    assert m, f"{path}: first line must be a '# jaxlint-expect: ...' header"
+    # Headers list every rule the fixture triggers; this test only cares about JL023.
+    ids = {i.strip() for i in m.group(1).split(",")}
+    return "JL023" if "JL023" in ids else "none"
 
 
 def _jl023_lines(path: Path, cfg: LintConfig) -> set[int]:
