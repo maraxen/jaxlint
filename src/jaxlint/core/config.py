@@ -30,6 +30,7 @@ class LintConfig:
     required_sections: tuple[str, ...] = DEFAULT_REQUIRED_SECTIONS
     section_order: tuple[str, ...] = SECTION_ORDER_DEFAULT
     strict_shapes: bool = False
+    host_sync_everywhere: bool = False
     rubric_threshold: float = 0.75
     per_file_ignores: dict[str, tuple[str, ...]] = field(default_factory=dict)
     cache_dir: Path | None = None
@@ -236,6 +237,7 @@ def _lint_config_from_raw(raw: dict[str, Any], path: Path, *, section_label: str
         required_sections=tuple(raw.get("required-sections") or DEFAULT_REQUIRED_SECTIONS),
         section_order=tuple(raw.get("section-order") or SECTION_ORDER_DEFAULT),
         strict_shapes=bool(raw.get("strict-shapes", False)),
+        host_sync_everywhere=bool(raw.get("host-sync-everywhere", False)),
         rubric_threshold=float(raw.get("rubric-threshold", 0.75)),
         severity_overrides=severity_overrides,
         sarif_rule_docs_base=sarif_rule_docs_base,

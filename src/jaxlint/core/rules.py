@@ -26,12 +26,19 @@ RULES: list[tuple[str, Severity, str]] = [
     ("JM001", Severity.ERROR, "Math delimiter imbalance or invalid $/$$ pairing (outside code fences)."),
     ("JM002", Severity.ERROR, "Malformed LaTeX structure in MathJax region."),
     ("JM003", Severity.WARNING, "Large math block with little surrounding prose."),
+    ("JL023", Severity.INFO, "Per-iteration host sync on a device value inside a host loop (src/ by default)."),
 ]
 
 # rule_id -> what to do after the rule fires. Host-side rules name a measurement step:
 # a static suspect is confirmed or cleared by `xtrax profile` (spec 261016, Workstream 1).
 # Emitted as SARIF ``help`` text; rules without an entry carry no followup.
-RULE_FOLLOWUPS: dict[str, str] = {}
+RULE_FOLLOWUPS: dict[str, str] = {
+    "JL023": (
+        "Confirm with `xtrax profile`: a large untraced wall time relative to device time with "
+        "exec/element >= 0.5 indicates per-iteration syncs. Fix by accumulating on device "
+        "(lax.scan / vmap) and calling device_get once after the loop."
+    ),
+}
 
 KNOWN_RULE_IDS: frozenset[str] = frozenset(rule_id for rule_id, _, _ in RULES)
 

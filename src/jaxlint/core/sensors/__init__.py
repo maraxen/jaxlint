@@ -8,6 +8,7 @@ from pathlib import Path
 from jaxlint.core.config import LintConfig
 from jaxlint.core.diagnostic import Diagnostic
 from jaxlint.core.sensors.best_practices import best_practices_diagnostics
+from jaxlint.core.sensors.host_sync import host_sync_diagnostics
 from jaxlint.core.sensors.loops import loop_diagnostics
 from jaxlint.core.sensors.purity import purity_diagnostics
 from jaxlint.core.sensors.scatter_gather import scatter_gather_diagnostics
@@ -21,6 +22,7 @@ def perf_diagnostics_from_tree(path: Path, cfg: LintConfig, tree: ast.Module) ->
     diagnostics.extend(purity_diagnostics(tree, path))
     diagnostics.extend(shape_diagnostics(tree, path, strict=cfg.strict_shapes))
     diagnostics.extend(best_practices_diagnostics(tree, path))
+    diagnostics.extend(host_sync_diagnostics(tree, path, everywhere=cfg.host_sync_everywhere))
     return diagnostics
 
 

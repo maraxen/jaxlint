@@ -35,6 +35,7 @@ Parsed keys live in `LintConfig` (`jaxlint.core.config`). TOML keys use **kebab-
 | `required-sections` | list of strings | `["Parameters", "Returns"]` | Section titles required in public APIs (see JD002). |
 | `section-order` | list of strings | `Parameters`, `Returns`, `Raises`, `Examples`, `Pseudocode`, `Hardware Notes` | Canonical order for JD003 warnings. |
 | `strict-shapes` | bool | `false` | If `true`, JL005 is promoted to **error** severity. |
+| `host-sync-everywhere` | bool | `false` | JL023 (per-iteration host sync) fires only on paths with a `src` component by default. If `true`, it also fires on every linted file. |
 | `rubric-threshold` | float | `0.75` | Default threshold for `jaxlint score`. |
 | `cache-dir` | string (path) | *(unset)* | Optional directory for caching **`jaxlint check`** diagnostics. Relative paths are resolved against the directory containing the loaded config file (`jaxlint.toml` or `pyproject.toml`). **`jaxlint check --cache-dir`** overrides this when the CLI flag is present. |
 | `severity-overrides` | table | `{}` | Map rule-id **patterns** → `error`, `warning`, or `info`. Applied **after** sensors (including **`strict-shapes`** for JL005) and **after** `select` / `ignore` / `per-file-ignores`. Pattern matching uses the same rules as `select` / `ignore` (`pattern_matches`). Keys must match at least one known rule id (unknown keys are rejected at parse time). Invalid severity strings are rejected at parse time. |
