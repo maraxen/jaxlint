@@ -91,11 +91,13 @@ respect-ignore-files = true
 # - mcp/server.py imports mcp 2.x (MCPServer) with a 1.x fallback (FastMCP); only one
 #   resolves in any env (1.x on Python < 3.13, 2.x on >= 3.13 via the `plugin` extra).
 # - cli/plugin_command.py imports cisternal lazily (`plugin` extra, Python >= 3.13 only).
+# - hooks/edit_hook.py imports cisternal only when CISTERNAL_TELEMETRY is set (same extra).
 [[tool.ty.overrides]]
 include = [
     "src/jaxlint/hlo/**",
     "src/jaxlint/mcp/server.py",
     "src/jaxlint/cli/plugin_command.py",
+    "src/jaxlint/hooks/edit_hook.py",
 ]
 
 [tool.ty.overrides.rules]
