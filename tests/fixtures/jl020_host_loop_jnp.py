@@ -1,4 +1,4 @@
-# jaxlint-expect: JL020
+# jaxlint-expect: JD001, JL020
 # jaxlint-config: host-loop-jnp-ops=true
 import jax.numpy as jnp
 

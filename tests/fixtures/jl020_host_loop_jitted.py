@@ -1,4 +1,4 @@
-# jaxlint-expect: JL020
+# jaxlint-expect: JD001, JL002, JL020
 import equinox as eqx
 import jax
 

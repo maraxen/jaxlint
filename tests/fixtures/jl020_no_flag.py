@@ -1,4 +1,4 @@
-# jaxlint-expect: none
+# jaxlint-expect: JD001, JL002, JL003
 import time
 
 import jax

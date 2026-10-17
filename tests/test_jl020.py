@@ -36,7 +36,7 @@ def _config_from_header(path: Path) -> LintConfig:
 @pytest.mark.integration
 def test_fixture_host_loop_flags_marked_loops(fixtures_dir: Path) -> None:
     p = fixtures_dir / "jl020_host_loop_jitted.py"
-    assert _header(p) == "# jaxlint-expect: JL020"
+    assert "JL020" in _header(p)  # header lists every rule the fixture triggers
     diags = run_checks([p], cfg=_config_from_header(p), perf=True, doc=False)
     assert {d.rule_id for d in diags} == {"JL020"}
     assert {d.line for d in diags} == _hit_lines(p)
@@ -46,7 +46,7 @@ def test_fixture_host_loop_flags_marked_loops(fixtures_dir: Path) -> None:
 @pytest.mark.integration
 def test_fixture_jnp_loop_flags_only_when_enabled(fixtures_dir: Path) -> None:
     p = fixtures_dir / "jl020_host_loop_jnp.py"
-    assert _header(p) == "# jaxlint-expect: JL020"
+    assert "JL020" in _header(p)  # header lists every rule the fixture triggers
     assert "# jaxlint-config: host-loop-jnp-ops=true" in p.read_text(encoding="utf-8")
     diags = run_checks([p], cfg=_config_from_header(p), perf=True, doc=False)
     assert {d.line for d in diags} == _hit_lines(p)
@@ -57,7 +57,7 @@ def test_fixture_jnp_loop_flags_only_when_enabled(fixtures_dir: Path) -> None:
 @pytest.mark.integration
 def test_fixture_no_flag_is_silent(fixtures_dir: Path) -> None:
     p = fixtures_dir / "jl020_no_flag.py"
-    assert _header(p) == "# jaxlint-expect: none"
+    assert "JL020" not in _header(p)
     diags = run_checks([p], cfg=LintConfig(select=frozenset(["JL020"])), perf=True, doc=False)
     assert diags == []
 
