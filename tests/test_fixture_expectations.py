@@ -19,7 +19,9 @@ from pathlib import Path
 
 import pytest
 
-from jaxlint.core.config import LintConfig
+from dataclasses import fields
+
+from jaxlint.core.config import LintConfig, _lint_config_from_raw
 from jaxlint.core.rules import KNOWN_RULE_IDS
 from jaxlint.core.runner import diagnostics_for_python_source
 
@@ -30,7 +32,8 @@ _EXPECT_RE = re.compile(r"^#\s*jaxlint-expect:\s*(.*?)\s*$")
 _CONFIG_RE = re.compile(r"^#\s*jaxlint-config:\s*(.*?)\s*$")
 _RULE_ID_RE = re.compile(r"^(JL|JD|JM)\d{3}$")
 _HEADER_LINES = 2
-_CONFIG_KEYS = {"strict-shapes"}
+# Boolean LintConfig options a fixture may set, in their pyproject (kebab-case) spelling.
+_CONFIG_KEYS = {f.name.replace("_", "-") for f in fields(LintConfig) if f.type in ("bool", bool)}
 
 
 def _parse_bool(key: str, value: str) -> bool:
@@ -72,15 +75,16 @@ def parse_header(path: Path) -> tuple[frozenset[str], LintConfig]:
             raise AssertionError(msg)
         expected = frozenset(ids)
 
-    strict_shapes = False
+    raw: dict[str, bool] = {}
     if config_value is not None:
         for pair in config_value.split():
             key, sep, value = pair.partition("=")
             if not sep or key not in _CONFIG_KEYS:
                 msg = f"{rel}: unknown jaxlint-config entry {pair!r} (known keys: {sorted(_CONFIG_KEYS)})"
                 raise AssertionError(msg)
-            strict_shapes = _parse_bool(key, value)
-    return expected, LintConfig(strict_shapes=strict_shapes)
+            raw[key] = _parse_bool(key, value)
+    # Build the config through the same parser pyproject.toml goes through.
+    return expected, _lint_config_from_raw(raw, path, section_label="jaxlint-config header")
 
 
 def _display(path: Path) -> str:
