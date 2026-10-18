@@ -1,8 +1,8 @@
 ---
 name: using-equinox
 description: Use when defining eqx.Module subclasses, using filter_jit/filter_grad, managing static fields, or debugging Equinox-specific tracing issues.
+when_to_use: 'Triggers: eqx.Module, filter_jit, filter_grad.'
 ---
-
 # using-equinox
 
 Equinox (eqx) is Patrick Kidger's pure-functional neural network library for JAX. Use this skill when working with eqx.Module, filter transforms, static fields, or functional model updates.

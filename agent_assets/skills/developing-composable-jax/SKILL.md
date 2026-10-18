@@ -1,8 +1,8 @@
 ---
 name: developing-composable-jax
 description: Use when Equinox __call__ methods are growing complex with branching paths, when similar modules are diverging, or when one operation needs several interchangeable implementations. Model-structure patterns only; batching/axis planning, pipeline stages and scan-vs-while loop selection live in xtrax (using-xtrax).
+when_to_use: 'Triggers: composable-jax, module-diverging, branching __call__, swappable implementation.'
 ---
-
 # developing-composable-jax
 
 ## SECTION 1: YAGNI gate — when to reach for composability
