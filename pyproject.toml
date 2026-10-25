@@ -57,7 +57,7 @@ mcp = [
 # requires Python >= 3.13; on 3.11/3.12 the extra is empty and `jaxlint plugin`
 # exits with an explanation.
 plugin = [
-    "cisternal>=0.1.4; python_version >= '3.13'",
+    "cisternal>=0.1.5; python_version >= '3.13'",
 ]
 
 [project.scripts]

@@ -387,7 +387,7 @@ wheels = [
 
 [[package]]
 name = "cisternal"
-version = "0.1.4"
+version = "0.1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cyclopts", marker = "python_full_version >= '3.13'" },
@@ -395,9 +395,9 @@ dependencies = [
     { name = "opentelemetry-api", marker = "python_full_version >= '3.13'" },
     { name = "pyyaml", marker = "python_full_version >= '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4a/4c/586216b963c534d20494f4b3923b3aab6eaf27f72413bb41a99ad6226126/cisternal-0.1.4.tar.gz", hash = "sha256:203c1e7202f0426170c0b9660c6fcb118c39cfd689f000daa70c701e7a0575ad", size = 431097, upload-time = "2026-10-23T16:53:59.929Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0b/40/9fd836f923634e5cad0f7286611910dcccda56db6f40c36641be4a9b3841/cisternal-0.1.5.tar.gz", hash = "sha256:b04b3652bc48272287f46cae33657780e176076cbd80f4139742c81f9545bc36", size = 431693, upload-time = "2026-10-25T20:55:53.774Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/53/29/df39a1b9bd12eda27d196f29ca88322a341678f5d610a6fc9b697eab5158/cisternal-0.1.4-py3-none-any.whl", hash = "sha256:046ff91d14b7fd22f7aefc450b55dcb05647f557b669167964f38fd4431c93e7", size = 279227, upload-time = "2026-10-23T16:53:58.587Z" },
+    { url = "https://files.pythonhosted.org/packages/75/62/d5a025e7669b506d617d459e719fc8ed1f2dc85208e307498389d46425a1/cisternal-0.1.5-py3-none-any.whl", hash = "sha256:59bf64aff737d6d895c4bbccb56724e99f9c157ed5c8d12150c506035de211d4", size = 279493, upload-time = "2026-10-25T20:55:52.456Z" },
 ]
 
 [[package]]
@@ -1032,7 +1032,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cisternal", marker = "python_full_version >= '3.13' and extra == 'plugin'", specifier = ">=0.1.4" },
+    { name = "cisternal", marker = "python_full_version >= '3.13' and extra == 'plugin'", specifier = ">=0.1.5" },
     { name = "griffe", specifier = ">=2.0.2" },
     { name = "jax", marker = "extra == 'hlo'", specifier = ">=0.4.30" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.8.0" },
