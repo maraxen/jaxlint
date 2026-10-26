@@ -174,6 +174,27 @@ exported = jax.export.export(jax.jit(model_fn))(params, sample_x)
 mlir_text = exported.mlir_module()  # StableHLO, input to any downstream compiler
 ```
 
+## Export without Equinox
+
+A function over an `xtrax.Struct` or any plain pytree exports the same way. `xtrax.partition` and `xtrax.combine` split array leaves from the rest (strings, ints, callables) and rejoin them; the non-array part stays a closure constant:
+
+```python
+import xtrax
+
+params, rest = xtrax.partition(model)  # model: xtrax.Struct, dict, or eqx.Module
+
+def model_fn(params, x):
+    return xtrax.combine(params, rest)(x)
+
+exported = jax.export.export(jax.jit(model_fn))(params, sample_x)
+```
+
+A `Struct` whose non-array fields are `static=True` can also go to `jax.export.export` directly: they sit in the tree structure, not in the inputs.
+
+### `xtrax.op` under export
+
+`jax.export` traces whatever the op selects at trace time, and outside `xtrax.intent.compile` an op selects against the context it is bound to. An unbound op, or one bound to a context with `kernels=False`, traces its reference. An op bound to `Context(kernels=True)` traces the kernel registered for the default backend at trace time, so the artifact holds that kernel (for example a Pallas call) instead of the reference. To export the reference, bind `Context(target="export", export_format=...)`, which always selects the reference, or leave the op unbound. Inside `xtrax.intent.compile` the compile's context decides, and its plan names the choice per op.
+
 ## Checkify + export for safe kernels
 
 Combine `jax.experimental.checkify` with export to carry safety checks through to the artifact:
