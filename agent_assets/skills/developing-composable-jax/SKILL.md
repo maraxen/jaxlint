@@ -1,6 +1,6 @@
 ---
 name: developing-composable-jax
-description: Use when Equinox __call__ methods are growing complex with branching paths, when similar modules are diverging, or when one operation needs several interchangeable implementations. Model-structure patterns only; batching/axis planning, pipeline stages and scan-vs-while loop selection live in xtrax (using-xtrax).
+description: Use when Equinox __call__ methods are growing complex with branching paths, when similar modules are diverging, or when one operation needs several interchangeable implementations. Model-structure patterns only; batching/axis planning, pipeline stages and scan-vs-while loop selection live in xtrax (using-xtrax; xtrax.intent loop/map).
 when_to_use: 'Triggers: composable-jax, module-diverging, branching __call__, swappable implementation.'
 ---
 # developing-composable-jax
@@ -204,7 +204,7 @@ Three composability problems recur often enough that [xtrax](https://github.com/
 |---|---|---|
 | Variable-length inputs and memory-bounded batching | Bucket lengths, pad to the bucket, carry a mask; per axis, choose `vmap` vs tiled `lax.map` from a memory budget (heterogeneous axes always tile) | `AxisSpec`, `BatchPlanner` / `MemoryBudget`, `ChunkedMap`, length bucketing (`using-xtrax`, `references/length-bucketing.md`) |
 | Several interchangeable pipeline components (encode, decode, sample) | Resolve the components once into a bundle/plan on the host; the traced code receives the resolved callables and never branches on mode | `StageBundle`, `RunSpec`, `xtrax.stages` (`using-xtrax`, `references/run.md`) |
-| Scan vs while loop (training vs inference) | `lax.scan` when you differentiate through the loop; `lax.while_loop` for inference-only loops (early stop, and reported large codegen savings on GPU for long autoregressive decodes) | `CarrySpec(collect_outputs=True)` → `Scan`; `CarrySpec(collect_outputs=False, cond=...)` / `WhileCarry` → one `WhileOp` (`using-xtrax`, `references/adoption.md`, "Inference-only loops") |
+| Scan vs while loop (training vs inference) | `lax.scan` when you differentiate through the loop; `lax.while_loop` for inference-only loops that stop early. Write the loop once and let the context pick, instead of a mode flag. Compile time is not a reliable reason on its own: see `using-jax`, "lax.scan vs lax.while_loop" | `xtrax.intent.loop` under `xtrax.intent.compile`: one `while_loop` undifferentiated, `lax.scan` under AD, `lax.while_loop` for `cond=` (`using-xtrax`, "Which Primitive for Which Problem", `references/intent.md`). Lower layer: `CarrySpec(collect_outputs=True)` → `Scan`; `CarrySpec(collect_outputs=False, cond=...)` / `WhileCarry` → one `WhileOp` (`references/adoption.md`) |
 
 The general JAX semantics of the scan/while choice (differentiability, termination, why IR size is not the explanation) are in `using-jax`, under "lax.scan vs lax.while_loop".
 
