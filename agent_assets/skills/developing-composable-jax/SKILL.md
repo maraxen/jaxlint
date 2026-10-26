@@ -1,6 +1,6 @@
 ---
 name: developing-composable-jax
-description: Use when Equinox __call__ methods are growing complex with branching paths, when similar modules are diverging, or when one operation needs several interchangeable implementations. Model-structure patterns only; batching/axis planning, pipeline stages and scan-vs-while loop selection live in xtrax (using-xtrax; xtrax.intent loop/map).
+description: Use when Equinox __call__ methods are growing complex with branching paths, when similar modules are diverging, or when one operation needs several interchangeable implementations. Model-structure patterns only; batching/axis planning, pipeline stages, scan-vs-while loop selection and reference-plus-kernel selection live in xtrax (using-xtrax; xtrax.intent loop/map).
 when_to_use: 'Triggers: composable-jax, module-diverging, branching __call__, swappable implementation.'
 ---
 # developing-composable-jax
@@ -196,15 +196,18 @@ Note: `eqx.Module, ABC` multiple inheritance works correctly. The integrator loo
 
 ---
 
-## SECTION 6: Patterns xtrax implements: batching, stage bundles, loop selection
+## SECTION 6: Patterns xtrax implements: batching, stage bundles, loop selection, kernel selection
 
-Three composability problems recur often enough that [xtrax](https://github.com/maraxen/xtrax) implements them as library primitives. If you use xtrax, use these; its `using-xtrax` skill is the reference. If you don't, the ideas still apply, but write them as small local helpers rather than a framework.
+Four composability problems recur often enough that [xtrax](https://github.com/maraxen/xtrax) implements them as library primitives. If you use xtrax, use these; its `using-xtrax` skill is the reference. If you don't, the ideas still apply, but write them as small local helpers rather than a framework.
 
 | Problem | Idea | xtrax primitive |
 |---|---|---|
 | Variable-length inputs and memory-bounded batching | Bucket lengths, pad to the bucket, carry a mask; per axis, choose `vmap` vs tiled `lax.map` from a memory budget (heterogeneous axes always tile) | `AxisSpec`, `BatchPlanner` / `MemoryBudget`, `ChunkedMap`, length bucketing (`using-xtrax`, `references/length-bucketing.md`) |
 | Several interchangeable pipeline components (encode, decode, sample) | Resolve the components once into a bundle/plan on the host; the traced code receives the resolved callables and never branches on mode | `StageBundle`, `RunSpec`, `xtrax.stages` (`using-xtrax`, `references/run.md`) |
 | Scan vs while loop (training vs inference) | `lax.scan` when you differentiate through the loop; `lax.while_loop` for inference-only loops that stop early. Write the loop once and let the context pick, instead of a mode flag. Compile time is not a reliable reason on its own: see `using-jax`, "lax.scan vs lax.while_loop" | `xtrax.intent.loop` under `xtrax.intent.compile`: one `while_loop` undifferentiated, `lax.scan` under AD, `lax.while_loop` for `cond=` (`using-xtrax`, "Which Primitive for Which Problem", `references/intent.md`). Lower layer: `CarrySpec(collect_outputs=True)` → `Scan`; `CarrySpec(collect_outputs=False, cond=...)` / `WhileCarry` → one `WhileOp` (`references/adoption.md`) |
+| One operation, a plain-JAX reference plus faster per-backend kernels (for example Pallas) | Keep the reference as the definition of the output and the derivatives; register kernels by backend name behind one callable, and let a context decide whether a kernel runs | `xtrax.op(reference, kernels={"gpu": ...}, vjp_kernels=...)`: an unbound op runs the reference; a `Context(kernels=True)`, bound with `op.with_context(...)` or passed to `xtrax.intent.compile`, selects the kernel for the resolved backend. Kernel calls are differentiated through the reference's JVP (`using-xtrax`, `references/intent.md`, "Op sites") |
+
+Use `xtrax.op` when one operation has a reference you trust and a faster kernel for some backends, and callers should not branch on the backend. Kernels must match the reference's output structure, shapes and dtypes (checked at call time). If there is a single implementation, call it directly.
 
 The general JAX semantics of the scan/while choice (differentiability, termination, why IR size is not the explanation) are in `using-jax`, under "lax.scan vs lax.while_loop".
 

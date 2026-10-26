@@ -215,6 +215,16 @@ leaves, treedef = jax.tree_util.tree_flatten(model)
 
 This helps catch shape mismatches and structural errors early.
 
+## With xtrax
+
+[xtrax](https://github.com/maraxen/xtrax) installs no Equinox; add `equinox` to your own dependencies.
+
+- An `eqx.Module` model enters xtrax as a plain pytree and comes back as the same type.
+- xtrax's own classes subclass `xtrax.Struct`, not `eqx.Module`: `isinstance(x, eqx.Module)` is `False` for them. `eqx.tree_at` works on them, and `eqx.field(static=True)` and `xtrax.field(static=True)` both mark a field static.
+- `xtrax.model_jit` is the `filter_jit` equivalent: array leaves are traced, every other leaf and the tree structure key the compile cache, so non-array leaves must be hashable. `xtrax.partition` / `xtrax.combine` mirror `eqx.partition` / `eqx.combine`.
+
+The xtrax side is in its `using-xtrax` skill.
+
 ## Common gotchas
 
 | Gotcha | Cause | Fix |
