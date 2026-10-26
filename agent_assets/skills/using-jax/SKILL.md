@@ -228,12 +228,18 @@ print(predictions.shape)  # (5,)
   for training paths and any fixed-length loop inside `jax.grad` / `eqx.filter_grad`.
 - **`lax.while_loop`** supports data-dependent termination (stop at EOS), but it is **not
   reverse-mode differentiable**. Use it for inference paths that can stop early.
-- **Long autoregressive loops on GPU: expect `scan` to be able to cost far more backend
-  compile time.** Two reports:
+- **Long autoregressive loops on GPU: `scan` has been reported to cost far more backend
+  compile time; pre-registered re-measurements did not reproduce it.** Two reports:
   - prxteinmpnn, Blackwell SM120, bucket 512, B=16: 30–40 min cold compile for `scan`
     (`unroll=1`) against 6.5 s for `while_loop`;
   - xtrax, L40S, a 512-step decode: over 20 min of backend codegen as `scan`, with no such
     cost as one `WhileOp`.
+
+  Two pre-registered runs on Blackwell SM120 (261025, aminx bathos runs `3b93937a` and
+  `c3c745a5`) found no gap. An L=512 autoregressive decode compiled in 7.6 s as `scan`
+  and 7.4 s as `while_loop`. `lax.map` around a `while_loop` (the nest that hung for an hour
+  in a July cluster job) compiled in 20.4 s, and `vmap` around it in 21.8 s. The earlier
+  reports may depend on the JAX/XLA version or on the batch.
 
   The StableHLO is the same size either way (above), so the gap arises later, in XLA's
   backend. A plausible but unverified cause: a `scan` has a static trip count XLA can unroll
@@ -293,7 +299,7 @@ def ar_decode_train(init_token, init_state, max_len: int) -> jax.Array:
 | Needs gradients (training, inside `jax.grad` / `eqx.filter_grad`) | `lax.scan` |
 | Inference with data-dependent stop (EOS) | `lax.while_loop` |
 | Fixed-length inference | Either: same IR at `unroll=1`; measure if compile time matters |
-| Both modes needed | Separate code paths keyed by a mode flag. With xtrax: `CarrySpec(collect_outputs=True)` plans a `Scan`, and `CarrySpec(collect_outputs=False, cond=...)` plans a `WhileCarry` (`using-xtrax`, `references/adoption.md`) |
+| Both modes needed | Separate code paths keyed by a mode flag. With xtrax, write the loop once as `xtrax.intent.loop`: one `while_loop` undifferentiated, `lax.scan` under AD, no flag (`using-xtrax`, `references/intent.md`). Lower layer: `CarrySpec(collect_outputs=True)` plans a `Scan`, and `CarrySpec(collect_outputs=False, cond=...)` plans a `WhileCarry` (`references/adoption.md`) |
 
 ## Numerical Safety
 
