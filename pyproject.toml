@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jaxlint"
-version = "0.4.3"
+version = "0.4.4"
 description = "CLI and library for JAX-oriented static checks, docstring quality, and optional HLO analysis"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -68,6 +68,10 @@ jaxlint-hook = "jaxlint.hooks.edit_hook:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/jaxlint"]
+core-metadata-version = "2.4"
+
+[tool.hatch.build.targets.sdist]
+core-metadata-version = "2.4"
 
 [tool.hatch.build.targets.wheel.force-include]
 "agent_assets" = "jaxlint/agent_assets"
