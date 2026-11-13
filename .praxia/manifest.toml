@@ -1,6 +1,6 @@
 [plugin]
 name            = "jaxlint"
-version         = "0.4.3"
+version         = "0.4.4"
 description     = "JAX/Equinox linting and usage guidance"
 requires_praxia = ">=1.0"
 
